@@ -1,13 +1,1081 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>vue-rongqiao</title>
-  </head>
-  <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.js"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>融桥 - 听障教育智慧教学平台</title>
+  <!-- 引入CDN资源 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+  <!-- Tailwind主题 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#2563EB',
+            secondary: '#FF7D00',
+            dark: '#1E293B',
+            light: '#F8FAFC'
+          },
+        }
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .card-hover { @apply transition-all duration-300 hover:-translate-y-2 hover:shadow-lg; }
+      .nav-active { @apply text-primary border-b-2 border-primary; }
+      .section-title { @apply text-[clamp(1.5rem,3vw,2.2rem)] font-bold text-center text-dark mb-3; }
+      .section-subtitle { @apply text-center text-gray-600 mb-12 max-w-3xl mx-auto; }
+      
+      /* 模态框基础样式 */
+      .modal-backdrop {
+        @apply fixed inset-0 bg-black/50 z-[9999] flex items-center justify-center p-4 opacity-0 invisible transition-all duration-300;
+      }
+      .modal-backdrop.active { @apply opacity-100 visible; }
+      .modal-content {
+        @apply bg-white rounded-xl w-full max-w-[95vw] max-h-[95vh] overflow-hidden shadow-2xl transform translate-y-8 transition-transform duration-300;
+      }
+      .modal-backdrop.active .modal-content { @apply translate-y-0; }
+
+      /* 教师端布局 */
+      .teacher-layout { @apply flex h-[85vh] overflow-hidden flex-col lg:flex-row; }
+      .teacher-main { @apply w-full lg:w-[70%] bg-gray-50 border-b lg:border-b-0 lg:border-r border-gray-200 overflow-auto p-4; }
+      .teacher-sidebar { @apply w-full lg:w-[30%] bg-white flex flex-col overflow-hidden; }
+
+      /* 学生端布局 */
+      .student-layout { @apply flex flex-col h-[85vh] overflow-hidden; }
+      .student-info { @apply h-[80%] bg-gray-50 flex flex-col sm:flex-row overflow-hidden; }
+      .student-subtitle { @apply w-full sm:w-[85%] overflow-y-auto p-4; }
+      .student-sign-window { @apply w-full sm:w-[15%] bg-white border-t sm:border-t-0 sm:border-l border-gray-200 p-2 flex flex-col items-center; }
+      .student-action { @apply h-[20%] bg-white border-t border-gray-200 flex flex-wrap items-center justify-around p-4 gap-2; }
+
+      /* 学生端意图按钮样式 */
+      .action-btn {
+        @apply flex flex-col items-center justify-center w-[22%] sm:w-[18%] h-[80%] rounded-xl bg-primary/10 text-primary 
+        hover:bg-primary hover:text-white transition-all duration-300 cursor-pointer card-hover;
+      }
+      .action-btn.active { @apply bg-primary text-white; }
+    }
+  </style>
+</head>
+<body class="bg-light font-sans text-dark">
+  <!-- 顶部导航栏 -->
+  <header id="navbar" class="fixed w-full top-0 z-50 bg-white/95 backdrop-blur-sm transition-all duration-300 shadow-sm">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <a href="#" class="flex items-center"><span class="text-2xl font-bold text-primary">融桥</span></a>
+        <nav class="hidden md:flex items-center space-x-8">
+          <a href="#home" class="nav-active h-16 flex items-center font-medium">首页</a>
+          <a href="#about" class="text-gray-600 hover:text-primary transition-colors h-16 flex items-center">关于平台</a>
+          <a href="#entry" class="text-gray-600 hover:text-primary transition-colors h-16 flex items-center">角色入口</a>
+          <a href="#function" class="text-gray-600 hover:text-primary transition-colors h-16 flex items-center">核心功能</a>
+          <a href="#scene" class="text-gray-600 hover:text-primary transition-colors h-16 flex items-center">教育场景</a>
+          <a href="#advantage" class="text-gray-600 hover:text-primary transition-colors h-16 flex items-center">产品优势</a>
+          <a href="#contact" class="text-gray-600 hover:text-primary transition-colors h-16 flex items-center">联系我们</a>
+        </nav>
+        <button id="menu-btn" class="md:hidden text-gray-600 focus:outline-none">
+          <i class="fa-solid fa-bars text-xl"></i>
+        </button>
+      </div>
+    </div>
+    <!-- 移动端菜单 -->
+    <div id="mobile-menu" class="md:hidden hidden bg-white border-t border-gray-100">
+      <div class="container mx-auto px-4 py-3 flex flex-col space-y-3">
+        <a href="#home" class="py-2 text-primary font-medium">首页</a>
+        <a href="#about" class="py-2 text-gray-600 hover:text-primary">关于平台</a>
+        <a href="#entry" class="py-2 text-gray-600 hover:text-primary">角色入口</a>
+        <a href="#function" class="py-2 text-gray-600 hover:text-primary">核心功能</a>
+        <a href="#scene" class="py-2 text-gray-600 hover:text-primary">教育场景</a>
+        <a href="#advantage" class="py-2 text-gray-600 hover:text-primary">产品优势</a>
+        <a href="#contact" class="py-2 text-gray-600 hover:text-primary">联系我们</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero区域 -->
+  <section id="home" class="pt-16 bg-primary min-h-[500px] flex items-center relative overflow-hidden">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 py-20 text-center relative z-10">
+      <h1 class="text-[clamp(2rem,5vw,3.5rem)] font-bold text-white mb-6 leading-tight">融桥 · 听障教育智慧教学平台</h1>
+      <p class="text-[clamp(1rem,2vw,1.25rem)] text-white/90 max-w-3xl mx-auto mb-10 leading-relaxed">
+        专为听障学生打造的无障碍教学解决方案，实现语音-手语双向实时翻译，覆盖课前-课中-课后全教学流程
+      </p>
+      <a href="#entry" class="inline-block bg-secondary text-white font-medium px-8 py-3 rounded-full hover:bg-secondary/90 transition-colors shadow-lg">
+        立即进入
+      </a>
+    </div>
+    <!-- 轮播左右箭头-->
+    <button id="carousel-prev" class="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 text-white grid place-items-center hover:bg-white/30 transition-colors z-10">
+      <i class="fa-solid fa-chevron-left"></i>
+    </button>
+    <button id="carousel-next" class="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/20 text-white grid place-items-center hover:bg-white/30 transition-colors z-10">
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>
+    <!-- 轮播图片容器 -->
+    <div id="carousel-container" class="absolute inset-0 opacity-20">
+      <img src="https://picsum.photos/id/20/1920/1080" alt="轮播图1" class="w-full h-full object-cover">
+    </div>
+  </section>
+
+  <!-- 关于我们区域 -->
+  <section id="about" class="py-16 bg-white">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="section-title relative inline-block w-full text-center">
+        关于我们
+        <span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-20 h-1 bg-secondary mt-2"></span>
+      </h2>
+      <p class="section-subtitle mt-8">
+        响应国家无障碍教育政策号召，专注听障学生全周期教育场景，打造专业无障碍教育沟通解决方案
+      </p>
+      <div class="max-w-4xl mx-auto text-gray-600 text-center leading-relaxed">
+        <p class="mb-4">
+          融桥是国内领先的教育场景专属AI手语翻译平台，深耕听障教育领域，针对听障学生的学习特点与教育场景的核心需求，
+          融合先进的计算机视觉、自然语言处理、情感识别技术，打造了覆盖课堂教学、课后学习、家校沟通全场景的无障碍教育解决方案。
+        </p>
+        <p>
+          我们致力于打破听障学生的教育沟通壁垒，让教育从单向灌输转向双向平等对话，让每一位听障学生都能平等享受优质的教育资源，实现无障碍学习与成长。
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 角色入口区域 -->
+  <section id="entry" class="py-16 bg-white">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="section-title relative inline-block w-full text-center">
+        角色入口
+        <span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-20 h-1 bg-secondary mt-2"></span>
+      </h2>
+      <p class="section-subtitle">根据您的身份选择对应入口，进入专属教学/学习界面</p>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        <!-- 教师端入口卡片 -->
+        <div data-modal="teacher-modal" class="bg-white rounded-xl p-8 shadow-lg card-hover cursor-pointer">
+          <div class="w-20 h-20 rounded-full bg-primary/10 grid place-items-center text-primary mb-6 mx-auto">
+            <i class="fa-solid fa-chalkboard-teacher text-4xl"></i>
+          </div>
+          <h3 class="text-2xl font-bold text-center mb-4">教师端</h3>
+          <p class="text-gray-600 text-center leading-relaxed mb-6">
+            双栏布局设计，主工作区展示教学材料，右侧实时反馈学生状态、推送适配资源，全流程辅助课堂教学
+          </p>
+          <div class="text-center">
+            <button class="bg-primary text-white px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors">
+              进入教师端
+            </button>
+          </div>
+        </div>
+
+        <!-- 学生端入口卡片 -->
+        <div data-modal="student-modal" class="bg-white rounded-xl p-8 shadow-lg card-hover cursor-pointer">
+          <div class="w-20 h-20 rounded-full bg-secondary/10 grid place-items-center text-secondary mb-6 mx-auto">
+            <i class="fa-solid fa-user-graduate text-4xl"></i>
+          </div>
+          <h3 class="text-2xl font-bold text-center mb-4">学生端</h3>
+          <p class="text-gray-600 text-center leading-relaxed mb-6">
+            上下分栏布局，上方实时显示字幕与手语小窗，下方快速表达课堂意图，无障碍获取教学内容
+          </p>
+          <div class="text-center">
+            <button class="bg-secondary text-white px-6 py-3 rounded-lg hover:bg-secondary/90 transition-colors">
+              进入学生端
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 核心功能区域 -->
+  <section id="function" class="py-16 bg-gray-50">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="section-title relative inline-block w-full text-center">
+        核心功能
+        <span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-20 h-1 bg-secondary mt-2"></span>
+      </h2>
+      <p class="section-subtitle">
+        专为听障教育场景深度打造，全流程覆盖听障学生学习与教师教学的核心需求
+      </p>
+
+      <!-- 功能卡片网格 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- 功能1：实时语音转文字 -->
+        <div data-modal="voice-to-sign-modal" class="bg-white rounded-lg p-6 shadow-sm card-hover cursor-pointer">
+          <div class="w-14 h-14 rounded-lg bg-primary/10 grid place-items-center text-primary mb-5">
+            <i class="fa-solid fa-microphone-lines text-2xl"></i>
+          </div>
+          <h3 class="text-xl font-bold text-dark mb-3">实时语音转文字（手语）</h3>
+          <p class="text-gray-600 leading-relaxed">
+            提供课堂场景毫秒级实时语音转文字、同步生成国家通用手语动画功能，方便听障学生在课堂、线下学习场景中实时获取教学内容，不漏掉任何知识点。
+          </p>
+        </div>
+
+        <!-- 功能2：手语转文字 -->
+        <div data-modal="sign-to-voice-modal" class="bg-white rounded-lg p-6 shadow-sm card-hover cursor-pointer">
+          <div class="w-14 h-14 rounded-lg bg-primary/10 grid place-items-center text-primary mb-5">
+            <i class="fa-solid fa-hands text-2xl"></i>
+          </div>
+          <h3 class="text-xl font-bold text-dark mb-3">手语转文字（语音）</h3>
+          <p class="text-gray-600 leading-relaxed">
+            提供精准手语动作识别转文字、同步生成语音功能，方便听障学生在课堂互动、课后交流中与老师、同学无障碍沟通，让教育由单向灌输向双向平等对话转变。
+          </p>
+        </div>
+
+        <!-- 功能3：情感关怀与激励机制 -->
+        <div data-modal="emotion-care-modal" class="bg-white rounded-lg p-6 shadow-sm card-hover cursor-pointer">
+          <div class="w-14 h-14 rounded-lg bg-primary/10 grid place-items-center text-primary mb-5">
+            <i class="fa-solid fa-heart text-2xl"></i>
+          </div>
+          <h3 class="text-xl font-bold text-dark mb-3">情感关怀与激励机制</h3>
+          <p class="text-gray-600 leading-relaxed">
+            针对听障学生学习过程中的情感关怀需求，设计科学合理的鼓励、奖励、成就体系，通过学习里程碑、成长勋章、正向反馈机制，给予学生持续的鼓励与肯定，激发学习动力。
+          </p>
+        </div>
+
+        <!-- 功能4：智能学情跟踪与动态教学调整 -->
+        <div data-modal="learning-tracking-modal" class="bg-white rounded-lg p-6 shadow-sm card-hover cursor-pointer">
+          <div class="w-14 h-14 rounded-lg bg-primary/10 grid place-items-center text-primary mb-5">
+            <i class="fa-solid fa-chart-line text-2xl"></i>
+          </div>
+          <h3 class="text-xl font-bold text-dark mb-3">智能学情跟踪与动态教学</h3>
+          <p class="text-gray-600 leading-relaxed">
+            实时跟进听障学生的学习进度、认知特征与学习反馈数据，自动为教师与学生动态调整教学方式与内容呈现节奏，适配听障学生的学习特点，实现个性化教学适配。
+          </p>
+        </div>
+
+        <!-- 功能5：情感识别与心理干预 -->
+        <div data-modal="emotion-recognition-modal" class="bg-white rounded-lg p-6 shadow-sm card-hover cursor-pointer">
+          <div class="w-14 h-14 rounded-lg bg-primary/10 grid place-items-center text-primary mb-5">
+            <i class="fa-solid fa-face-smile text-2xl"></i>
+          </div>
+          <h3 class="text-xl font-bold text-dark mb-3">情感识别与心理干预</h3>
+          <p class="text-gray-600 leading-relaxed">
+            借助情感识别与共情模拟技术，实时捕捉听障学生的学习情绪变化，给予有效的心理疏导与干预，弥补传统教育中听障学生情感交互的不足；同时通过个性化算法精准推送成长案例与成才故事，帮助学生构建积极的自我认知。
+          </p>
+        </div>
+
+        <!-- 功能6：个性化能力画像与精准辅导 -->
+        <div data-modal="student-profile-modal" class="bg-white rounded-lg p-6 shadow-sm card-hover cursor-pointer">
+          <div class="w-14 h-14 rounded-lg bg-primary/10 grid place-items-center text-primary mb-5">
+            <i class="fa-solid fa-user-graduate text-2xl"></i>
+          </div>
+          <h3 class="text-xl font-bold text-dark mb-3">个性化能力画像与精准辅导</h3>
+          <p class="text-gray-600 leading-relaxed">
+            根据学生的个性特征与发展需求，构建专属个性化能力画像，为教师改进教学提供数据支撑；通过动态追踪学生的学习轨迹，自动识别个体优势与薄弱环节，及时调整教学策略，实现精准辅导，同时自动生成班级学情报告，辅助教师制定针对性教学方案。
+          </p>
+        </div>
+
+        <!-- 功能7：AI手语术语库与知识图谱 -->
+        <div data-modal="sign-term-library-modal" class="bg-white rounded-lg p-6 shadow-sm card-hover cursor-pointer md:col-span-2 lg:col-span-3">
+          <div class="w-14 h-14 rounded-lg bg-primary/10 grid place-items-center text-primary mb-5">
+            <i class="fa-solid fa-book text-2xl"></i>
+          </div>
+          <h3 class="text-xl font-bold text-dark mb-3">AI手语术语库与知识图谱</h3>
+          <p class="text-gray-600 leading-relaxed">
+            为全学科课程构建专属AI手语术语库，针对教学内容中的核心知识点搭建可视化知识图谱，通过图示、动画、视频三种形式，帮助听障学生直观、深入地理解专业术语与知识点，降低学习门槛，提升学习效率。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 教育应用场景区域 -->
+  <section id="scene" class="py-16 bg-white">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="section-title relative inline-block w-full text-center">
+        教育应用场景
+        <span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-20 h-1 bg-secondary mt-2"></span>
+      </h2>
+      <p class="section-subtitle">
+        覆盖听障学生全学习周期场景，全方位保障无障碍教育沟通
+      </p>
+
+      <!-- 场景卡片网格 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="rounded-xl overflow-hidden group card-hover">
+          <div class="relative h-64 overflow-hidden">
+            <img src="https://picsum.photos/id/20/800/500" alt="课堂教学场景" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 p-6 text-white">
+              <h3 class="text-2xl font-bold mb-2">课堂教学</h3>
+              <p class="text-white/80">中小学、高校课堂、特殊教育学校日常教学</p>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-xl overflow-hidden group card-hover">
+          <div class="relative h-64 overflow-hidden">
+            <img src="https://picsum.photos/id/24/800/500" alt="课后辅导场景" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 p-6 text-white">
+              <h3 class="text-2xl font-bold mb-2">课后辅导</h3>
+              <p class="text-white/80">一对一课后答疑、作业辅导、知识点巩固</p>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-xl overflow-hidden group card-hover">
+          <div class="relative h-64 overflow-hidden">
+            <img src="https://picsum.photos/id/3/800/500" alt="线上网课场景" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 p-6 text-white">
+              <h3 class="text-2xl font-bold mb-2">线上网课</h3>
+              <p class="text-white/80">直播课堂、录播课程、线上培训、远程教学</p>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-xl overflow-hidden group card-hover">
+          <div class="relative h-64 overflow-hidden">
+            <img src="https://picsum.photos/id/42/800/500" alt="考试测评场景" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 p-6 text-white">
+              <h3 class="text-2xl font-bold mb-2">考试测评</h3>
+              <p class="text-white/80">期中期末考试、口语考试、面试测评、等级考试</p>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-xl overflow-hidden group card-hover">
+          <div class="relative h-64 overflow-hidden">
+            <img src="https://picsum.photos/id/48/800/500" alt="校园服务场景" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 p-6 text-white">
+              <h3 class="text-2xl font-bold mb-2">校园服务</h3>
+              <p class="text-white/80">校园办事、心理咨询、社团活动、校园会议</p>
+            </div>
+          </div>
+        </div>
+        <div class="rounded-xl overflow-hidden group card-hover">
+          <div class="relative h-64 overflow-hidden">
+            <img src="https://picsum.photos/id/87/800/500" alt="家校沟通场景" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+            <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
+            <div class="absolute bottom-0 left-0 p-6 text-white">
+              <h3 class="text-2xl font-bold mb-2">家校沟通</h3>
+              <p class="text-white/80">家长会、家校约谈、成长反馈、家校协同教育</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 产品优势区域 -->
+  <section id="advantage" class="py-16 bg-gray-50">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <h2 class="section-title relative inline-block w-full text-center">
+        产品优势
+        <span class="absolute bottom-0 left-1/2 -translate-x-1/2 w-20 h-1 bg-secondary mt-2"></span>
+      </h2>
+      <p class="section-subtitle">
+        专为教育场景深度优化，打造专业、稳定、高效的无障碍教育解决方案
+      </p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="bg-white rounded-lg p-6 shadow-sm card-hover">
+          <h3 class="text-lg font-bold text-primary mb-3">教育专属手语词库</h3>
+          <p class="text-gray-600">针对全学科教育场景打造专属手语词库，覆盖K12、高等教育全学科专业术语，手语翻译精准度行业领先。</p>
+        </div>
+        <div class="bg-white rounded-lg p-6 shadow-sm card-hover">
+          <h3 class="text-lg font-bold text-primary mb-3">毫秒级实时翻译</h3>
+          <p class="text-gray-600">低延迟实时双向翻译，语音转手语延迟低于200ms，手语识别准确率超98%，完美适配课堂实时教学场景。</p>
+        </div>
+        <div class="bg-white rounded-lg p-6 shadow-sm card-hover">
+          <h3 class="text-lg font-bold text-primary mb-3">全场景多端适配</h3>
+          <p class="text-gray-600">支持Windows、Mac、安卓、iOS多终端，适配智慧黑板、电脑、平板、手机全设备，覆盖教育全场景使用需求。</p>
+        </div>
+        <div class="bg-white rounded-lg p-6 shadow-sm card-hover">
+          <h3 class="text-lg font-bold text-primary mb-3">个性化教学适配</h3>
+          <p class="text-gray-600">基于AI算法的个性化学习适配，针对不同学生的认知节奏、学习能力动态调整内容，真正实现因材施教。</p>
+        </div>
+        <div class="bg-white rounded-lg p-6 shadow-sm card-hover">
+          <h3 class="text-lg font-bold text-primary mb-3">数据安全合规</h3>
+          <p class="text-gray-600">严格遵守教育数据安全规范，全链路数据加密，本地化部署方案可选，保障学生个人信息与教学数据安全。</p>
+        </div>
+        <div class="bg-white rounded-lg p-6 shadow-sm card-hover">
+          <h3 class="text-lg font-bold text-primary mb-3">持续迭代优化</h3>
+          <p class="text-gray-600">联合特殊教育院校、听障教育专家持续优化产品，同步更新国家通用手语标准，不断提升产品体验与教育适配性。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 联系我们区域 -->
+  <section id="contact" class="py-16 bg-primary">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <h2 class="text-[clamp(1.5rem,3vw,2.2rem)] font-bold text-white mb-6">
+        助力听障教育无障碍，让每一位学生平等享受教育的权利
+      </h2>
+      <p class="text-white/90 max-w-2xl mx-auto mb-8">
+        如需了解产品详情、申请试用、商务合作，立即联系我们获取专属无障碍教育解决方案
+      </p>
+      <a href="javascript:;" class="inline-block bg-white text-primary font-bold px-8 py-3 rounded-full hover:bg-gray-100 transition-colors shadow-lg">
+        咨询合作
+      </a>
+    </div>
+  </section>
+
+  <!-- 页脚 -->
+  <footer class="bg-dark text-white/70 py-10">
+    <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row justify-between items-center mb-8">
+        <div class="mb-6 md:mb-0">
+          <span class="text-2xl font-bold text-white">融桥</span>
+          <p class="mt-2 text-sm">专注教育场景的AI手语翻译平台</p>
+        </div>
+        <div class="flex flex-wrap justify-center gap-6">
+          <a href="#home" class="hover:text-white transition-colors">首页</a>
+          <a href="#about" class="hover:text-white transition-colors">关于我们</a>
+          <a href="#entry" class="hover:text-white transition-colors">角色入口</a>
+          <a href="#function" class="hover:text-white transition-colors">核心功能</a>
+          <a href="#scene" class="hover:text-white transition-colors">教育场景</a>
+          <a href="#advantage" class="hover:text-white transition-colors">产品优势</a>
+          <a href="#contact" class="hover:text-white transition-colors">联系我们</a>
+        </div>
+      </div>
+      <div class="border-t border-white/10 pt-6 text-center text-sm">
+        <p>© 2024 融桥 版权所有 | 无障碍教育解决方案服务商</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- 1. 教师端模态框 -->
+  <div id="teacher-modal" class="modal-backdrop">
+    <div class="modal-content">
+      <div class="bg-primary text-white px-6 py-4 flex justify-between items-center">
+        <h2 class="text-xl font-bold">教师端 - 课堂教学系统</h2>
+        <button class="modal-close text-white hover:text-white/80">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+      <div class="teacher-layout">
+        <div class="teacher-main">
+          <div id="teacher-preclass" class="h-full flex flex-col items-center justify-center">
+            <h3 class="text-2xl font-bold mb-6">课前准备</h3>
+            <div class="w-full max-w-md space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">选择授课班级</label>
+                <select id="class-select" class="w-full p-3 border border-gray-300 rounded-lg">
+                  <option value="">请选择班级</option>
+                  <option value="class1">初二(1)班 听障班</option>
+                  <option value="class2">初三(2)班 融合班</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">选择课程章节</label>
+                <select id="chapter-select" class="w-full p-3 border border-gray-300 rounded-lg">
+                  <option value="">请选择章节</option>
+                  <option value="chapter1">数学-几何图形-三角形</option>
+                  <option value="chapter2">语文-记叙文-阅读理解</option>
+                </select>
+              </div>
+              <button id="load-teaching-material" class="w-full bg-primary text-white py-3 rounded-lg hover:bg-primary/90 transition-colors">
+                加载教学材料
+              </button>
+            </div>
+          </div>
+
+          <div id="teacher-class" class="h-full hidden">
+              <div class="bg-white rounded-lg p-4 shadow-sm h-full flex flex-col">
+                  <div class="flex justify-between items-center mb-4">
+                      <h3 class="text-lg font-semibold">授课PPT/教学材料</h3>
+                      <!-- 添加翻页控制按钮 -->
+                      <div class="flex items-center space-x-2">
+                          <button id="prev-page" class="px-3 py-1 text-sm bg-gray-200 rounded disabled:opacity-50" disabled>上一页</button>
+                          <span id="page-info">第 1 页</span>
+                          <button id="next-page" class="px-3 py-1 text-sm bg-gray-200 rounded disabled:opacity-50" disabled>下一页</button>
+                      </div>
+                  </div>
+                  <!-- 动态 PPT 容器 -->
+                  <div id="ppt-container" class="bg-gray-100 rounded-lg flex-1 overflow-auto flex items-center justify-center">
+                      <p class="text-gray-500">请先加载教学材料</p>
+                  </div>
+              </div>
+          </div>
+          
+          <div id="teacher-postclass" class="h-full hidden">
+            <h3 class="text-xl font-bold mb-4">课后学情简报</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-[calc(100%-40px)]">
+              <div class="bg-white p-4 rounded-lg shadow-sm">
+                <h4 class="font-semibold mb-2">课堂参与热力图</h4>
+                <canvas id="teacher-heatmap-chart" height="200"></canvas>
+              </div>
+              <div class="bg-white p-4 rounded-lg shadow-sm">
+                <h4 class="font-semibold mb-2">知识点互动情况</h4>
+                <canvas id="teacher-knowledge-chart" height="200"></canvas>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="teacher-sidebar">
+          <div class="border-b border-gray-200 p-4">
+            <h4 class="font-semibold mb-2">实时语音转写字幕</h4>
+            <div id="teacher-subtitle" class="bg-gray-50 p-3 rounded-lg h-24 overflow-y-auto text-gray-700">
+              未开始授课，暂无字幕
+            </div>
+          </div>
+          <div class="border-b border-gray-200 p-4 flex-1 overflow-auto">
+            <h4 class="font-semibold mb-2">班级学生状态</h4>
+            <div id="teacher-student-list" class="space-y-2">
+              <p class="text-gray-500">请先选择班级加载学生名单</p>
+            </div>
+          </div>
+          <div class="p-4">
+            <h4 class="font-semibold mb-2">适配资源推送</h4>
+            <div id="teacher-resource-list" class="space-y-2 mb-3">
+              <p class="text-gray-500">加载章节后显示适配资源</p>
+            </div>
+            <button id="push-resource-btn" class="w-full bg-secondary text-white py-2 rounded-lg hover:bg-secondary/90 transition-colors hidden">
+              一键推送至学生端
+            </button>
+          </div>
+          <div class="p-4 border-t border-gray-200">
+            <button id="start-class-btn" class="w-full bg-primary text-white py-3 rounded-lg hover:bg-primary/90 transition-colors mb-2 hidden">
+              开始授课
+            </button>
+            <button id="end-class-btn" class="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition-colors hidden">
+              结束授课
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 学生端模态框 -->
+  <div id="student-modal" class="modal-backdrop">
+    <div class="modal-content">
+      <div class="bg-secondary text-white px-6 py-4 flex justify-between items-center">
+        <h2 class="text-xl font-bold">学生端 - 课堂学习系统</h2>
+        <button class="modal-close text-white hover:text-white/80">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+      <div class="student-layout">
+        <div class="student-info">
+          <div class="student-subtitle">
+            <h3 class="text-lg font-semibold mb-3">实时课堂字幕</h3>
+            <div id="student-subtitle" class="bg-white p-4 rounded-lg shadow-sm h-[calc(100%-40px)] overflow-y-auto text-gray-700 leading-relaxed">
+              教师未开始授课，暂无字幕
+            </div>
+          </div>
+          <div class="student-sign-window">
+            <h4 class="font-semibold mb-2">手语解释</h4>
+            <div id="student-sign-video" class="w-full h-[calc(100%-40px)] bg-gray-100 rounded-lg flex items-center justify-center">
+              <p class="text-gray-500 text-center text-sm">暂无手语视频</p>
+            </div>
+          </div>
+        </div>
+        <div class="student-action">
+          <div class="action-btn" data-action="question">
+            <i class="fa-solid fa-question-circle text-4xl mb-2"></i>
+            <span class="font-bold">提问</span>
+          </div>
+          <div class="action-btn" data-action="help">
+            <i class="fa-solid fa-hand-paper text-4xl mb-2"></i>
+            <span class="font-bold">求助</span>
+          </div>
+          <div class="action-btn" data-action="understand">
+            <i class="fa-solid fa-check-circle text-4xl mb-2"></i>
+            <span class="font-bold">听懂</span>
+          </div>
+          <div class="action-btn" data-action="not-understand">
+            <i class="fa-solid fa-times-circle text-4xl mb-2"></i>
+            <span class="font-bold">没听懂</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. 实时语音转文字（手语）模态框 -->
+  <div id="voice-to-sign-modal" class="modal-backdrop">
+    <div class="modal-content p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-2xl font-bold text-primary">实时语音转文字（手语）</h3>
+        <button class="modal-close text-gray-500 hover:text-gray-700">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="space-y-6">
+          <div>
+            <h4 class="text-lg font-semibold mb-3">音频输入</h4>
+            <div class="bg-gray-50 p-4 rounded-lg mb-4">
+              <button id="record-btn" class="bg-primary text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-primary/90 transition-colors">
+                <i class="fa-solid fa-microphone"></i>
+                <span>开始录制</span>
+              </button>
+              <p id="record-status" class="mt-2 text-sm text-gray-600">未录制</p>
+              <audio id="record-audio" controls class="w-full mt-4 hidden"></audio>
+            </div>
+            <div class="bg-gray-50 p-4 rounded-lg">
+              <label class="block text-sm font-medium text-gray-700 mb-2">上传音频文件</label>
+              <input type="file" id="audio-upload" accept="audio/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary file:text-white hover:file:bg-primary/90">
+            </div>
+          </div>
+          <div>
+            <h4 class="text-lg font-semibold mb-3">文字结果</h4>
+            <div id="voice-text-result" class="bg-gray-50 p-4 rounded-lg min-h-[100px] text-gray-700">
+              请录制或上传音频后生成文字结果
+            </div>
+          </div>
+        </div>
+        <div>
+          <h4 class="text-lg font-semibold mb-3">手语动画展示</h4>
+          <div id="sign-animation-container" class="bg-gray-100 rounded-lg p-4 flex flex-col items-center justify-center min-h-[300px]">
+            <video id="sign-animation" controls class="rounded-lg mb-4 hidden max-w-full" width="400" height="300">
+              <source src="" type="video/mp4">
+              您的浏览器不支持视频播放
+            </video>
+            <p id="sign-animation-tip" class="text-gray-500">请先生成文字结果以展示手语动画</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 其他功能模态框（简化占位） -->
+  <div id="sign-to-voice-modal" class="modal-backdrop">
+    <div class="modal-content p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-2xl font-bold text-primary">手语转文字（语音）</h3>
+        <button class="modal-close text-gray-500 hover:text-gray-700">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+      <p class="text-gray-600">手语转文字（语音）功能演示：通过摄像头识别手语动作，转换为文字并合成语音输出，实现听障学生与他人的无障碍沟通。</p>
+    </div>
+  </div>
+
+  <div id="emotion-care-modal" class="modal-backdrop">
+    <div class="modal-content p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-2xl font-bold text-primary">情感关怀与激励机制</h3>
+        <button class="modal-close text-gray-500 hover:text-gray-700">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+      <p class="text-gray-600">情感关怀与激励机制演示：通过学习里程碑、成长勋章、正向反馈等方式，给予听障学生持续的鼓励与肯定，激发学习动力。</p>
+    </div>
+  </div>
+
+  <div id="learning-tracking-modal" class="modal-backdrop">
+    <div class="modal-content p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-2xl font-bold text-primary">智能学情跟踪与动态教学</h3>
+        <button class="modal-close text-gray-500 hover:text-gray-700">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+      <p class="text-gray-600">智能学情跟踪与动态教学演示：实时跟进学生学习进度，自动调整教学方式与内容节奏，适配听障学生的学习特点。</p>
+    </div>
+  </div>
+
+  <div id="emotion-recognition-modal" class="modal-backdrop">
+    <div class="modal-content p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-2xl font-bold text-primary">情感识别与心理干预</h3>
+        <button class="modal-close text-gray-500 hover:text-gray-700">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+      <p class="text-gray-600">情感识别与心理干预演示：捕捉学生学习情绪变化，给予心理疏导，推送成长案例，帮助学生构建积极的自我认知。</p>
+    </div>
+  </div>
+
+  <div id="student-profile-modal" class="modal-backdrop">
+    <div class="modal-content p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-2xl font-bold text-primary">个性化能力画像与精准辅导</h3>
+        <button class="modal-close text-gray-500 hover:text-gray-700">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+      <p class="text-gray-600">个性化能力画像与精准辅导演示：构建学生专属能力画像，识别优势与薄弱环节，实现精准辅导与教学策略调整。</p>
+    </div>
+  </div>
+
+  <div id="sign-term-library-modal" class="modal-backdrop">
+    <div class="modal-content p-6">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-2xl font-bold text-primary">AI手语术语库与知识图谱</h3>
+        <button class="modal-close text-gray-500 hover:text-gray-700">
+          <i class="fa-solid fa-xmark text-xl"></i>
+        </button>
+      </div>
+      <p class="text-gray-600">AI手语术语库与知识图谱演示：全学科专属手语术语库，可视化知识图谱，帮助听障学生直观理解专业术语与知识点。</p>
+    </div>
+  </div>
+
+  <!-- JavaScript 交互逻辑 -->
+  <script>
+    // 全局变量
+    let currentPage = 1;
+    let totalPages = 0;
+    let isRecording = false;
+    let isClassStarted = false;
+    let carouselImages = [
+      "https://picsum.photos/id/20/1920/1080",
+      "https://picsum.photos/id/24/1920/1080",
+      "https://picsum.photos/id/3/1920/1080"
+    ];
+    let currentCarouselIndex = 0;
+
+    // DOM加载完成后执行
+    document.addEventListener('DOMContentLoaded', function() {
+      // 1. 移动端菜单切换
+      const menuBtn = document.getElementById('menu-btn');
+      const mobileMenu = document.getElementById('mobile-menu');
+      menuBtn.addEventListener('click', function() {
+        mobileMenu.classList.toggle('hidden');
+      });
+
+      // 2. 模态框交互
+      // 打开模态框
+      document.querySelectorAll('[data-modal]').forEach(item => {
+        item.addEventListener('click', function() {
+          const modalId = this.getAttribute('data-modal');
+          const modal = document.getElementById(modalId);
+          modal.classList.add('active');
+          document.body.style.overflow = 'hidden'; // 禁止背景滚动
+          
+          // 初始化教师端图表（仅首次打开）
+          if (modalId === 'teacher-modal' && !document.getElementById('teacher-heatmap-chart')._chart) {
+            initTeacherCharts();
+          }
+        });
+      });
+
+      // 关闭模态框
+      document.querySelectorAll('.modal-close').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const modal = this.closest('.modal-backdrop');
+          modal.classList.remove('active');
+          document.body.style.overflow = ''; // 恢复背景滚动
+        });
+      });
+
+      // 点击模态框背景关闭
+      document.querySelectorAll('.modal-backdrop').forEach(modal => {
+        modal.addEventListener('click', function(e) {
+          if (e.target === this) {
+            this.classList.remove('active');
+            document.body.style.overflow = '';
+          }
+        });
+      });
+
+      // 3. 轮播图功能
+      const carouselContainer = document.getElementById('carousel-container');
+      const carouselPrev = document.getElementById('carousel-prev');
+      const carouselNext = document.getElementById('carousel-next');
+      
+      carouselPrev.addEventListener('click', () => {
+        currentCarouselIndex = (currentCarouselIndex - 1 + carouselImages.length) % carouselImages.length;
+        carouselContainer.querySelector('img').src = carouselImages[currentCarouselIndex];
+      });
+      
+      carouselNext.addEventListener('click', () => {
+        currentCarouselIndex = (currentCarouselIndex + 1) % carouselImages.length;
+        carouselContainer.querySelector('img').src = carouselImages[currentCarouselIndex];
+      });
+
+      // 自动轮播
+      setInterval(() => {
+        currentCarouselIndex = (currentCarouselIndex + 1) % carouselImages.length;
+        carouselContainer.querySelector('img').src = carouselImages[currentCarouselIndex];
+      }, 5000);
+
+      // 4. 教师端交互逻辑
+      // 加载教学材料
+      const loadTeachingMaterialBtn = document.getElementById('load-teaching-material');
+      const classSelect = document.getElementById('class-select');
+      const chapterSelect = document.getElementById('chapter-select');
+      const teacherPreclass = document.getElementById('teacher-preclass');
+      const teacherClass = document.getElementById('teacher-class');
+      const teacherStudentList = document.getElementById('teacher-student-list');
+      const teacherResourceList = document.getElementById('teacher-resource-list');
+      const pushResourceBtn = document.getElementById('push-resource-btn');
+      const startClassBtn = document.getElementById('start-class-btn');
+      const endClassBtn = document.getElementById('end-class-btn');
+      const prevPageBtn = document.getElementById('prev-page');
+      const nextPageBtn = document.getElementById('next-page');
+      const pageInfo = document.getElementById('page-info');
+      const pptContainer = document.getElementById('ppt-container');
+
+      loadTeachingMaterialBtn.addEventListener('click', function() {
+        const selectedClass = classSelect.value;
+        const selectedChapter = chapterSelect.value;
+        
+        if (!selectedClass || !selectedChapter) {
+          alert('请选择班级和课程章节！');
+          return;
+        }
+
+        // 模拟加载学生列表
+        teacherStudentList.innerHTML = `
+          <div class="bg-gray-50 p-2 rounded-lg flex justify-between items-center">
+            <span>张三</span>
+            <span class="text-green-500">在线</span>
+          </div>
+          <div class="bg-gray-50 p-2 rounded-lg flex justify-between items-center">
+            <span>李四</span>
+            <span class="text-green-500">在线</span>
+          </div>
+          <div class="bg-gray-50 p-2 rounded-lg flex justify-between items-center">
+            <span>王五</span>
+            <span class="text-yellow-500">离开</span>
+          </div>
+        `;
+
+        // 模拟加载适配资源
+        teacherResourceList.innerHTML = `
+          <div class="bg-gray-50 p-2 rounded-lg cursor-pointer hover:bg-primary/10 transition-colors">
+            <span class="text-sm">三角形知识点手语视频.mp4</span>
+          </div>
+          <div class="bg-gray-50 p-2 rounded-lg cursor-pointer hover:bg-primary/10 transition-colors">
+            <span class="text-sm">几何图形练习题.pdf</span>
+          </div>
+        `;
+
+        // 显示资源推送按钮和开始授课按钮
+        pushResourceBtn.classList.remove('hidden');
+        startClassBtn.classList.remove('hidden');
+
+        // 模拟PPT页数
+        totalPages = 5;
+        currentPage = 1;
+        pageInfo.textContent = `第 ${currentPage} 页`;
+        
+        // 加载PPT第一页
+        pptContainer.innerHTML = `
+          <img src="https://picsum.photos/id/20/800/600" alt="PPT第1页" class="max-h-full rounded-lg">
+        `;
+        
+        // 启用翻页按钮（下一页）
+        nextPageBtn.disabled = false;
+        
+        // 切换到课中界面
+        teacherPreclass.classList.add('hidden');
+        teacherClass.classList.remove('hidden');
+      });
+
+      // PPT翻页逻辑
+      prevPageBtn.addEventListener('click', function() {
+        if (currentPage > 1) {
+          currentPage--;
+          updatePPT();
+        }
+      });
+
+      nextPageBtn.addEventListener('click', function() {
+        if (currentPage < totalPages) {
+          currentPage++;
+          updatePPT();
+        }
+      });
+
+      function updatePPT() {
+        pageInfo.textContent = `第 ${currentPage} 页`;
+        pptContainer.innerHTML = `
+          <img src="https://picsum.photos/id/${20 + currentPage}/800/600" alt="PPT第${currentPage}页" class="max-h-full rounded-lg">
+        `;
+        // 更新按钮状态
+        prevPageBtn.disabled = currentPage === 1;
+        nextPageBtn.disabled = currentPage === totalPages;
+      }
+
+      // 开始授课
+      startClassBtn.addEventListener('click', function() {
+        isClassStarted = true;
+        // 模拟实时字幕
+        let subtitleIndex = 0;
+        const subtitles = [
+          "同学们，今天我们学习三角形的性质",
+          "三角形有三条边、三个角",
+          "三角形的内角和是180度",
+          "大家可以看PPT上的示例图",
+          "有不懂的地方可以举手提问"
+        ];
+        
+        // 教师端字幕更新
+        const teacherSubtitle = document.getElementById('teacher-subtitle');
+        // 学生端字幕更新
+        const studentSubtitle = document.getElementById('student-subtitle');
+        // 学生端手语视频
+        const studentSignVideo = document.getElementById('student-sign-video');
+
+        // 切换按钮状态
+        startClassBtn.classList.add('hidden');
+        endClassBtn.classList.remove('hidden');
+        
+        // 模拟实时字幕滚动
+        teacherSubtitle.textContent = "正在授课...";
+        studentSubtitle.textContent = "正在授课...";
+        studentSignVideo.innerHTML = `<p class="text-primary text-center text-sm">正在播放手语动画</p>`;
+
+        let subtitleInterval = setInterval(() => {
+          if (!isClassStarted) {
+            clearInterval(subtitleInterval);
+            return;
+          }
+          teacherSubtitle.textContent = subtitles[subtitleIndex];
+          studentSubtitle.textContent = subtitles[subtitleIndex];
+          subtitleIndex = (subtitleIndex + 1) % subtitles.length;
+        }, 3000);
+      });
+
+      // 结束授课
+      endClassBtn.addEventListener('click', function() {
+        isClassStarted = false;
+        // 切换到课后界面
+        teacherClass.classList.add('hidden');
+        document.getElementById('teacher-postclass').classList.remove('hidden');
+        endClassBtn.classList.add('hidden');
+      });
+
+      // 5. 学生端意图按钮交互
+      document.querySelectorAll('.action-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          // 清除其他按钮的激活状态
+          document.querySelectorAll('.action-btn').forEach(b => b.classList.remove('active'));
+          // 设置当前按钮激活状态
+          this.classList.add('active');
+          const action = this.getAttribute('data-action');
+          const actionText = {
+            'question': '已发送提问请求',
+            'help': '已发送求助请求',
+            'understand': '已标记听懂当前知识点',
+            'not-understand': '已标记未听懂当前知识点'
+          };
+          
+          // 反馈到教师端（模拟）
+          if (document.getElementById('teacher-modal').classList.contains('active')) {
+            const teacherStudentList = document.getElementById('teacher-student-list');
+            const feedbackHtml = `
+              <div class="bg-${action === 'understand' ? 'green' : 'red'}/10 p-2 rounded-lg mt-2 text-sm">
+                <i class="fa-solid fa-bell mr-2"></i>学生反馈：${actionText[action]}
+              </div>
+            `;
+            teacherStudentList.insertAdjacentHTML('beforeend', feedbackHtml);
+          }
+          
+          // 提示学生
+          alert(actionText[action]);
+        });
+      });
+
+      // 6. 音频录制模拟
+      const recordBtn = document.getElementById('record-btn');
+      const recordStatus = document.getElementById('record-status');
+      const recordAudio = document.getElementById('record-audio');
+      const audioUpload = document.getElementById('audio-upload');
+      const voiceTextResult = document.getElementById('voice-text-result');
+      const signAnimation = document.getElementById('sign-animation');
+      const signAnimationTip = document.getElementById('sign-animation-tip');
+
+      recordBtn.addEventListener('click', function() {
+        if (!isRecording) {
+          // 开始录制
+          isRecording = true;
+          recordBtn.innerHTML = `<i class="fa-solid fa-stop"></i><span>停止录制</span>`;
+          recordStatus.textContent = "正在录制...";
+          
+          // 模拟录制（实际需使用Web Audio API）
+          setTimeout(() => {
+            if (isRecording) {
+              recordAudio.src = "https://samplelib.com/lib/preview/mp3/sample-3s.mp3";
+              recordAudio.classList.remove('hidden');
+              voiceTextResult.textContent = "同学们，今天我们学习三角形的性质，三角形有三条边、三个角，内角和是180度。";
+              signAnimationTip.textContent = "";
+              signAnimation.src = "https://samplelib.com/lib/preview/mp4/sample-5s.mp4";
+              signAnimation.classList.remove('hidden');
+            }
+          }, 3000);
+        } else {
+          // 停止录制
+          isRecording = false;
+          recordBtn.innerHTML = `<i class="fa-solid fa-microphone"></i><span>开始录制</span>`;
+          recordStatus.textContent = "录制完成";
+        }
+      });
+
+      // 音频上传模拟
+      audioUpload.addEventListener('change', function() {
+        if (this.files.length > 0) {
+          recordStatus.textContent = `已上传：${this.files[0].name}`;
+          voiceTextResult.textContent = "同学们，今天我们学习三角形的性质，三角形有三条边、三个角，内角和是180度。";
+          signAnimationTip.textContent = "";
+          signAnimation.src = "https://samplelib.com/lib/preview/mp4/sample-5s.mp4";
+          signAnimation.classList.remove('hidden');
+        }
+      });
+
+      // 7. 资源推送按钮
+      pushResourceBtn.addEventListener('click', function() {
+        alert('适配资源已一键推送至所有学生端！');
+      });
+
+      // 8. 导航栏滚动效果
+      window.addEventListener('scroll', function() {
+        const navbar = document.getElementById('navbar');
+        if (window.scrollY > 50) {
+          navbar.classList.add('shadow-md');
+          navbar.classList.remove('shadow-sm');
+        } else {
+          navbar.classList.remove('shadow-md');
+          navbar.classList.add('shadow-sm');
+        }
+      });
+    });
+
+    // 初始化教师端图表
+    function initTeacherCharts() {
+      // 课堂参与热力图（饼图）
+      const heatmapCtx = document.getElementById('teacher-heatmap-chart').getContext('2d');
+      new Chart(heatmapCtx, {
+        type: 'pie',
+        data: {
+          labels: ['高度参与', '一般参与', '低参与', '未参与'],
+          datasets: [{
+            label: '课堂参与度',
+            data: [45, 30, 15, 10],
+            backgroundColor: [
+              '#2563EB',
+              '#93C5FD',
+              '#FBBF24',
+              '#EF4444'
+            ]
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false
+        }
+      });
+
+      // 知识点互动情况（柱状图）
+      const knowledgeCtx = document.getElementById('teacher-knowledge-chart').getContext('2d');
+      new Chart(knowledgeCtx, {
+        type: 'bar',
+        data: {
+          labels: ['三角形定义', '内角和', '边长关系', '全等判定', '相似判定'],
+          datasets: [{
+            label: '互动次数',
+            data: [85, 70, 65, 45, 30],
+            backgroundColor: '#2563EB'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+  </script>
+</body>
 </html>
