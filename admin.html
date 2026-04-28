@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员端</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- 引入ECharts用于数据统计图表 -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        adminPurple: {
+                            50: '#faf5ff',
+                            100: '#f3e8ff',
+                            200: '#e9d5ff',
+                            300: '#d8b4fe',
+                            400: '#c084fc',
+                            500: '#a855f7',
+                            600: '#9333ea',
+                            700: '#7e22ce',
+                            800: '#6b21a8',
+                            900: '#581c87',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .admin-card-hover {
+                @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+            }
+            .admin-menu-item {
+                @apply flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 text-gray-600 hover:bg-adminPurple-100 hover:text-adminPurple-700 cursor-pointer;
+            }
+            .admin-menu-item.active {
+                @apply bg-adminPurple-100 text-adminPurple-700 font-medium border-l-4 border-adminPurple-600;
+            }
+            .admin-btn {
+                @apply px-4 py-2 rounded-lg font-medium transition-all duration-200;
+            }
+            .admin-btn-primary {
+                @apply bg-adminPurple-600 text-white hover:bg-adminPurple-700;
+            }
+            .admin-btn-outline {
+                @apply border border-adminPurple-500 text-adminPurple-600 hover:bg-adminPurple-50;
+            }
+            .table-row-hover {
+                @apply transition-colors duration-150 hover:bg-adminPurple-50;
+            }
+            .switch-toggle {
+                @apply relative inline-block w-11 h-6 rounded-full cursor-pointer;
+            }
+            .switch-input {
+                @apply opacity-0 w-0 h-0;
+            }
+            .switch-slider {
+                @apply absolute cursor-pointer top-0 left-0 right-0 bottom-0 bg-gray-300 transition-all duration-200 rounded-full;
+            }
+            .switch-slider:before {
+                @apply absolute content-[''] h-5 w-5 left-0.5 bottom-0.5 bg-white transition-all duration-200 rounded-full;
+            }
+            .switch-input:checked + .switch-slider {
+                @apply bg-adminPurple-600;
+            }
+            .switch-input:checked + .switch-slider:before {
+                @apply transform translate-x-5;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- 管理员端页面主体 -->
+    <div class="bg-white min-h-screen flex flex-col">
+        <!-- 顶部紫色标题栏 -->
+        <div class="bg-adminPurple-600 text-white px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+            <h2 class="text-xl font-bold flex items-center gap-2">
+                <i class="fa-solid fa-user-shield"></i> 管理员端
+            </h2>
+            <!-- 可添加用户信息/退出按钮等页面级操作 -->
+            <div class="flex items-center gap-4">
+                <span class="text-white/90 text-sm">管理员：admin</span>
+                <button class="px-4 py-2 rounded-lg font-medium transition-all duration-200 border border-white text-white hover:bg-white hover:text-adminPurple-700">
+                <i class="fa-solid fa-right-from-bracket mr-1"></i> 退出登录
+                </button>
+            </div>
+        </div>
+
+        <!-- 主体内容：侧边栏 + 主内容区（适配整页） -->
+        <div class="flex flex-1 overflow-hidden">
+            <!-- 左侧菜单（固定宽度，适配整页高度） -->
+            <div class="w-56 bg-gray-50 border-r border-gray-200 p-4 flex flex-col gap-1 h-[calc(100vh-64px)] sticky top-16 overflow-y-auto">
+                <p class="text-xs text-gray-400 uppercase tracking-wider mb-2 px-4">管理菜单</p>
+                <div class="admin-menu-item active" data-target="account-manage">
+                    <i class="fa-solid fa-users w-5 text-center"></i>
+                    <span>账号管理</span>
+                </div>
+                <div class="admin-menu-item" data-target="permission-setting">
+                    <i class="fa-solid fa-user-lock w-5 text-center"></i>
+                    <span>权限设置</span>
+                </div>
+                <div class="admin-menu-item" data-target="data-statistics">
+                    <i class="fa-solid fa-chart-bar w-5 text-center"></i>
+                    <span>数据统计</span>
+                </div>
+                <div class="admin-menu-item" data-target="system-config">
+                    <i class="fa-solid fa-cog w-5 text-center"></i>
+                    <span>系统配置</span>
+                </div>
+
+                <!-- 额外的快捷功能 -->
+                <div class="mt-6 pt-6 border-t border-gray-200">
+                    <p class="text-xs text-gray-400 uppercase tracking-wider mb-2 px-4">快捷操作</p>
+                    <div class="admin-menu-item">
+                        <i class="fa-solid fa-download w-5 text-center"></i>
+                        <span>导出账号列表</span>
+                    </div>
+                    <div class="admin-menu-item">
+                        <i class="fa-solid fa-upload w-5 text-center"></i>
+                        <span>批量导入账号</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧主内容区（填充剩余空间，自然滚动） -->
+            <div class="flex-1 flex flex-col overflow-y-auto bg-gray-100 p-6">
+                <!-- 1. 账号管理（原有内容） -->
+                <div id="account-manage" class="content-panel">
+                    <!-- 顶部数据统计卡片 -->
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                        <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-100 admin-card-hover">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-gray-500 text-sm">总学生账号</p>
+                                    <p class="text-2xl font-bold text-gray-800 mt-1">128</p>
+                                </div>
+                                <div class="w-10 h-10 rounded-full bg-adminPurple-100 flex items-center justify-center text-adminPurple-600">
+                                    <i class="fa-solid fa-user-graduate"></i>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-2">较上月 +12%</p>
+                        </div>
+                        <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-100 admin-card-hover">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-gray-500 text-sm">启用账号</p>
+                                    <p class="text-2xl font-bold text-green-600 mt-1">122</p>
+                                </div>
+                                <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                                    <i class="fa-solid fa-check-circle"></i>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-2">占比 95.3%</p>
+                        </div>
+                        <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-100 admin-card-hover">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-gray-500 text-sm">禁用账号</p>
+                                    <p class="text-2xl font-bold text-red-500 mt-1">6</p>
+                                </div>
+                                <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-500">
+                                    <i class="fa-solid fa-ban"></i>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-2">占比 4.7%</p>
+                        </div>
+                        <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-100 admin-card-hover">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-gray-500 text-sm">管理班级</p>
+                                    <p class="text-2xl font-bold text-adminPurple-600 mt-1">16</p>
+                                </div>
+                                <div class="w-10 h-10 rounded-full bg-adminPurple-100 flex items-center justify-center text-adminPurple-600">
+                                    <i class="fa-solid fa-school"></i>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-2">覆盖 8 个年级</p>
+                        </div>
+                    </div>
+
+                    <!-- 账号管理主面板 -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-100 flex-1 flex flex-col">
+                        <!-- 搜索筛选栏 -->
+                        <div class="p-4 border-b border-gray-100 flex flex-wrap gap-4 items-center justify-between">
+                            <div class="flex flex-1 gap-4 min-w-[300px]">
+                                <div class="relative flex-1">
+                                    <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                    <input type="text" placeholder="搜索账号ID/姓名/班级" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-adminPurple-300 focus:border-adminPurple-500">
+                                </div>
+                                <select class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-adminPurple-300 focus:border-adminPurple-500">
+                                    <option>全部班级</option>
+                                    <option>初二(1)班 听障班</option>
+                                    <option>初三(2)班 融合班</option>
+                                </select>
+                                <select class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-adminPurple-300 focus:border-adminPurple-500">
+                                    <option>全部状态</option>
+                                    <option>启用</option>
+                                    <option>禁用</option>
+                                </select>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="admin-btn admin-btn-outline">
+                                    <i class="fa-solid fa-filter mr-1"></i> 高级筛选
+                                </button>
+                                <button class="admin-btn admin-btn-primary" onclick="alert('打开新增账号弹窗')">
+                                    <i class="fa-solid fa-plus mr-1"></i> 新增学生账号
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 账号表格 -->
+                        <div class="flex-1 overflow-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50 sticky top-0">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">
+                                            <input type="checkbox" class="rounded text-adminPurple-600 focus:ring-adminPurple-500">
+                                        </th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">账号ID</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">姓名</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">班级</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">状态</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">创建时间</th>
+                                        <th class="px-4 py-3 text-left text-sm font-medium text-gray-600">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr class="table-row-hover">
+                                        <td class="px-4 py-3"><input type="checkbox" class="rounded text-adminPurple-600 focus:ring-adminPurple-500"></td>
+                                        <td class="px-4 py-3 text-sm font-medium text-gray-800">S2024001</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">张明</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">初二(1)班 听障班</td>
+                                        <td class="px-4 py-3">
+                                            <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">启用</span>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-600">2024-01-10</td>
+                                        <td class="px-4 py-3">
+                                            <div class="flex gap-2">
+                                                <button class="text-blue-500 hover:text-blue-700 transition-colors" title="编辑">
+                                                    <i class="fa-solid fa-pen-to-square"></i>
+                                                </button>
+                                                <button class="text-orange-500 hover:text-orange-700 transition-colors" title="重置密码">
+                                                    <i class="fa-solid fa-key"></i>
+                                                </button>
+                                                <button class="text-red-500 hover:text-red-700 transition-colors" title="删除">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="table-row-hover">
+                                        <td class="px-4 py-3"><input type="checkbox" class="rounded text-adminPurple-600 focus:ring-adminPurple-500"></td>
+                                        <td class="px-4 py-3 text-sm font-medium text-gray-800">S2024002</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">李华</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">初三(2)班 融合班</td>
+                                        <td class="px-4 py-3">
+                                            <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-700">禁用</span>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-600">2024-02-15</td>
+                                        <td class="px-4 py-3">
+                                            <div class="flex gap-2">
+                                                <button class="text-blue-500 hover:text-blue-700 transition-colors" title="编辑">
+                                                    <i class="fa-solid fa-pen-to-square"></i>
+                                                </button>
+                                                <button class="text-orange-500 hover:text-orange-700 transition-colors" title="重置密码">
+                                                    <i class="fa-solid fa-key"></i>
+                                                </button>
+                                                <button class="text-red-500 hover:text-red-700 transition-colors" title="删除">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    <tr class="table-row-hover">
+                                        <td class="px-4 py-3"><input type="checkbox" class="rounded text-adminPurple-600 focus:ring-adminPurple-500"></td>
+                                        <td class="px-4 py-3 text-sm font-medium text-gray-800">S2024003</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">王芳</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">初二(1)班 听障班</td>
+                                        <td class="px-4 py-3">
+                                            <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">启用</span>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-600">2024-01-12</td>
+                                        <td class="px-4 py-3">
+                                            <div class="flex gap-2">
+                                                <button class="text-blue-500 hover:text-blue-700 transition-colors" title="编辑">
+                                                    <i class="fa-solid fa-pen-to-square"></i>
+                                                </button>
+                                                <button class="text-orange-500 hover:text-orange-700 transition-colors" title="重置密码">
+                                                    <i class="fa-solid fa-key"></i>
+                                                </button>
+                                                <button class="text-red-500 hover:text-red-700 transition-colors" title="删除">
+                                                    <i class="fa-solid fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- 分页栏 -->
+                        <div class="p-4 border-t border-gray-100 flex justify-between items-center">
+                            <p class="text-sm text-gray-600">共 128 条记录，第 1/11 页</p>
+                            <div class="flex gap-1">
+                                <button class="px-3 py-1 border border-gray-200 rounded text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>上一页</button>
+                                <button class="px-3 py-1 border border-adminPurple-500 bg-adminPurple-50 text-adminPurple-700 rounded text-sm">1</button>
+                                <button class="px-3 py-1 border border-gray-200 rounded text-sm text-gray-600 hover:bg-gray-50">2</button>
+                                <button class="px-3 py-1 border border-gray-200 rounded text-sm text-gray-600 hover:bg-gray-50">3</button>
+                                <span class="px-3 py-1 text-gray-400">...</span>
+                                <button class="px-3 py-1 border border-gray-200 rounded text-sm text-gray-600 hover:bg-gray-50">11</button>
+                                <button class="px-3 py-1 border border-gray-200 rounded text-sm text-gray-600 hover:bg-gray-50">下一页</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. 权限设置模块 -->
+                <div id="permission-setting" class="content-panel hidden">
+                    <h3 class="text-lg font-bold text-gray-800 mb-6">权限设置</h3>
+                    
+                    <!-- 角色管理卡片 -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                        <!-- 角色列表 -->
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 admin-card-hover">
+                            <div class="flex justify-between items-center mb-4">
+                                <h4 class="font-medium text-gray-700">角色管理</h4>
+                                <button class="admin-btn admin-btn-primary text-sm py-1 px-3">
+                                    <i class="fa-solid fa-plus mr-1"></i> 新增角色
+                                </button>
+                            </div>
+                            <div class="overflow-auto max-h-[300px]">
+                                <table class="w-full">
+                                    <thead class="bg-gray-50 sticky top-0">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-600">角色名称</th>
+                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-600">描述</th>
+                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-600">用户数</th>
+                                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-600">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-gray-100">
+                                        <tr class="table-row-hover">
+                                            <td class="px-3 py-2 text-sm text-gray-800">超级管理员</td>
+                                            <td class="px-3 py-2 text-sm text-gray-700">拥有系统全部权限</td>
+                                            <td class="px-3 py-2 text-sm text-gray-700">1</td>
+                                            <td class="px-3 py-2">
+                                                <button class="text-blue-500 hover:text-blue-700 text-sm" title="编辑权限">
+                                                    <i class="fa-solid fa-pen-to-square mr-1"></i> 编辑权限
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr class="table-row-hover">
+                                            <td class="px-3 py-2 text-sm text-gray-800">班级管理员</td>
+                                            <td class="px-3 py-2 text-sm text-gray-700">仅管理指定班级账号</td>
+                                            <td class="px-3 py-2 text-sm text-gray-700">8</td>
+                                            <td class="px-3 py-2">
+                                                <button class="text-blue-500 hover:text-blue-700 text-sm" title="编辑权限">
+                                                    <i class="fa-solid fa-pen-to-square mr-1"></i> 编辑权限
+                                                </button>
+                                            </td>
+                                        </tr>
+                                        <tr class="table-row-hover">
+                                            <td class="px-3 py-2 text-sm text-gray-800">只读操作员</td>
+                                            <td class="px-3 py-2 text-sm text-gray-700">仅查看数据，无修改权限</td>
+                                            <td class="px-3 py-2 text-sm text-gray-700">5</td>
+                                            <td class="px-3 py-2">
+                                                <button class="text-blue-500 hover:text-blue-700 text-sm" title="编辑权限">
+                                                    <i class="fa-solid fa-pen-to-square mr-1"></i> 编辑权限
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- 权限分配面板 -->
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 admin-card-hover">
+                            <div class="flex justify-between items-center mb-4">
+                                <h4 class="font-medium text-gray-700">权限分配（班级管理员）</h4>
+                                <select class="px-3 py-1 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-adminPurple-300">
+                                    <option>超级管理员</option>
+                                    <option selected>班级管理员</option>
+                                    <option>只读操作员</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="space-y-3">
+                                    <p class="text-sm font-medium text-gray-700">账号管理权限</p>
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" checked class="rounded text-adminPurple-600 focus:ring-adminPurple-500">
+                                        <label class="text-sm text-gray-600">查看学生账号</label>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" checked class="rounded text-adminPurple-600 focus:ring-adminPurple-500">
+                                        <label class="text-sm text-gray-600">编辑本班账号</label>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" class="rounded text-adminPurple-600 focus:ring-adminPurple-500">
+                                        <label class="text-sm text-gray-600">删除账号</label>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" class="rounded text-adminPurple-600 focus:ring-adminPurple-500">
+                                        <label class="text-sm text-gray-600">批量导入/导出</label>
+                                    </div>
+                                </div>
+                                <div class="space-y-3">
+                                    <p class="text-sm font-medium text-gray-700">系统管理权限</p>
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" class="rounded text-adminPurple-600 focus:ring-adminPurple-500">
+                                        <label class="text-sm text-gray-600">修改系统配置</label>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" checked class="rounded text-adminPurple-600 focus:ring-adminPurple-500">
+                                        <label class="text-sm text-gray-600">查看数据统计</label>
+                                    </div>
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" class="rounded text-adminPurple-600 focus:ring-adminPurple-500">
+                                        <label class="text-sm text-gray-600">分配用户权限</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 flex justify-end">
+                                <button class="admin-btn admin-btn-primary text-sm">
+                                    <i class="fa-solid fa-save mr-1"></i> 保存权限设置
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 用户-角色绑定 -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5">
+                        <div class="flex justify-between items-center mb-4">
+                            <h4 class="font-medium text-gray-700">用户-角色绑定</h4>
+                            <div class="relative w-64">
+                                <i class="fa-solid fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                                <input type="text" placeholder="搜索用户名/角色" class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-adminPurple-300 focus:border-adminPurple-500 text-sm">
+                            </div>
+                        </div>
+                        <div class="overflow-auto max-h-[250px]">
+                            <table class="w-full">
+                                <thead class="bg-gray-50 sticky top-0">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600">用户名</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600">所属角色</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600">管理班级</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr class="table-row-hover">
+                                        <td class="px-4 py-3 text-sm text-gray-800">teacher_zhang</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">
+                                            <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">班级管理员</span>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">初二(1)班 听障班</td>
+                                        <td class="px-4 py-3">
+                                            <button class="text-blue-500 hover:text-blue-700 text-sm" title="修改角色">
+                                                <i class="fa-solid fa-exchange-alt mr-1"></i> 更换角色
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="table-row-hover">
+                                        <td class="px-4 py-3 text-sm text-gray-800">teacher_li</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">
+                                            <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">班级管理员</span>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">初三(2)班 融合班</td>
+                                        <td class="px-4 py-3">
+                                            <button class="text-blue-500 hover:text-blue-700 text-sm" title="修改角色">
+                                                <i class="fa-solid fa-exchange-alt mr-1"></i> 更换角色
+                                            </button>
+                                        </td>
+                                    </tr>
+                                    <tr class="table-row-hover">
+                                        <td class="px-4 py-3 text-sm text-gray-800">audit_wang</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">
+                                            <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">只读操作员</span>
+                                        </td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">全部班级</td>
+                                        <td class="px-4 py-3">
+                                            <button class="text-blue-500 hover:text-blue-700 text-sm" title="修改角色">
+                                                <i class="fa-solid fa-exchange-alt mr-1"></i> 更换角色
+                                            </button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. 数据统计模块 -->
+                <div id="data-statistics" class="content-panel hidden">
+                    <h3 class="text-lg font-bold text-gray-800 mb-6">数据统计分析</h3>
+                    
+                    <!-- 筛选栏 -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-4 mb-6 flex flex-wrap gap-4 items-center">
+                        <div class="flex gap-4">
+                            <div>
+                                <label class="text-xs text-gray-500 mb-1 block">统计周期</label>
+                                <select class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-adminPurple-300 focus:border-adminPurple-500">
+                                    <option selected>近6个月</option>
+                                    <option>近12个月</option>
+                                    <option>2024年全年</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs text-gray-500 mb-1 block">班级类型</label>
+                                <select class="px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-adminPurple-300 focus:border-adminPurple-500">
+                                    <option selected>全部班级</option>
+                                    <option>听障班</option>
+                                    <option>融合班</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button class="admin-btn admin-btn-primary ml-auto">
+                            <i class="fa-solid fa-refresh mr-1"></i> 刷新数据
+                        </button>
+                    </div>
+
+                    <!-- 核心指标卡片 -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-100 admin-card-hover">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-gray-500 text-sm">月均新增账号</p>
+                                    <p class="text-2xl font-bold text-gray-800 mt-1">21</p>
+                                </div>
+                                <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-600">
+                                    <i class="fa-solid fa-arrow-trend-up"></i>
+                                </div>
+                            </div>
+                            <p class="text-xs text-green-600 mt-2">较去年同期 +8.2%</p>
+                        </div>
+                        <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-100 admin-card-hover">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-gray-500 text-sm">账号活跃率</p>
+                                    <p class="text-2xl font-bold text-gray-800 mt-1">89.7%</p>
+                                </div>
+                                <div class="w-10 h-10 rounded-full bg-adminPurple-100 flex items-center justify-center text-adminPurple-600">
+                                    <i class="fa-solid fa-users-line"></i>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-2">近30天登录用户占比</p>
+                        </div>
+                        <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-100 admin-card-hover">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-gray-500 text-sm">异常账号数</p>
+                                    <p class="text-2xl font-bold text-red-500 mt-1">3</p>
+                                </div>
+                                <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-500">
+                                    <i class="fa-solid fa-triangle-exclamation"></i>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-2">连续90天未登录</p>
+                        </div>
+                    </div>
+
+                    <!-- 图表区域 -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- 账号增长趋势图 -->
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 admin-card-hover">
+                            <h4 class="font-medium text-gray-700 mb-4">账号增长趋势</h4>
+                            <div class="w-full h-[300px]" id="growth-chart"></div>
+                        </div>
+                        <!-- 班级账号分布 + 状态分布 -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 admin-card-hover">
+                                <h4 class="font-medium text-gray-700 mb-4">班级账号分布</h4>
+                                <div class="w-full h-[250px]" id="class-distribution-chart"></div>
+                            </div>
+                            <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 admin-card-hover">
+                                <h4 class="font-medium text-gray-700 mb-4">账号状态分布</h4>
+                                <div class="w-full h-[250px]" id="status-distribution-chart"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 班级明细数据 -->
+                    <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 mt-6">
+                        <h4 class="font-medium text-gray-700 mb-4">班级账号明细</h4>
+                        <div class="overflow-auto">
+                            <table class="w-full">
+                                <thead class="bg-gray-50 sticky top-0">
+                                    <tr>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600">年级班级</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600">班级类型</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600">总账号数</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600">启用数</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600">禁用数</th>
+                                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-600">活跃率</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-100">
+                                    <tr class="table-row-hover">
+                                        <td class="px-4 py-3 text-sm text-gray-800">初二(1)班</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">听障班</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">18</td>
+                                        <td class="px-4 py-3 text-sm text-green-600">17</td>
+                                        <td class="px-4 py-3 text-sm text-red-500">1</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">94.4%</td>
+                                    </tr>
+                                    <tr class="table-row-hover">
+                                        <td class="px-4 py-3 text-sm text-gray-800">初三(2)班</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">融合班</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">24</td>
+                                        <td class="px-4 py-3 text-sm text-green-600">22</td>
+                                        <td class="px-4 py-3 text-sm text-red-500">2</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">87.5%</td>
+                                    </tr>
+                                    <tr class="table-row-hover">
+                                        <td class="px-4 py-3 text-sm text-gray-800">初一(3)班</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">听障班</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">15</td>
+                                        <td class="px-4 py-3 text-sm text-green-600">15</td>
+                                        <td class="px-4 py-3 text-sm text-red-500">0</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">92.7%</td>
+                                    </tr>
+                                    <tr class="table-row-hover">
+                                        <td class="px-4 py-3 text-sm text-gray-800">初四(1)班</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">融合班</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">20</td>
+                                        <td class="px-4 py-3 text-sm text-green-600">19</td>
+                                        <td class="px-4 py-3 text-sm text-red-500">1</td>
+                                        <td class="px-4 py-3 text-sm text-gray-700">88.0%</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. 系统配置模块 -->
+                <div id="system-config" class="content-panel hidden">
+                    <h3 class="text-lg font-bold text-gray-800 mb-6">系统配置</h3>
+                    
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- 基础配置 -->
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 admin-card-hover">
+                            <h4 class="font-medium text-gray-700 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-cog text-adminPurple-600"></i> 基础配置
+                            </h4>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-sm text-gray-600 mb-1 block">系统名称</label>
+                                    <input type="text" value="特殊教育学校账号管理系统" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-adminPurple-300 focus:border-adminPurple-500">
+                                </div>
+                                <div>
+                                    <label class="text-sm text-gray-600 mb-1 block">系统版本</label>
+                                    <input type="text" value="v2.1.0" readonly class="w-full px-4 py-2 border border-gray-200 bg-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-adminPurple-300 focus:border-adminPurple-500">
+                                </div>
+                                <div>
+                                    <label class="text-sm text-gray-600 mb-1 block">联系邮箱</label>
+                                    <input type="email" value="admin@specialed.com.cn" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-adminPurple-300 focus:border-adminPurple-500">
+                                </div>
+                                <div>
+                                    <label class="text-sm text-gray-600 mb-1 block">客服电话</label>
+                                    <input type="tel" value="400-888-9999" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-adminPurple-300 focus:border-adminPurple-500">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 安全配置 -->
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 admin-card-hover">
+                            <h4 class="font-medium text-gray-700 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-shield-halved text-adminPurple-600"></i> 安全配置
+                            </h4>
+                            <div class="space-y-4">
+                                <div>
+                                    <label class="text-sm text-gray-600 mb-1 block">密码复杂度</label>
+                                    <select class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-adminPurple-300 focus:border-adminPurple-500">
+                                        <option>简单（仅数字）</option>
+                                        <option selected>中等（数字+字母）</option>
+                                        <option>复杂（数字+字母+特殊符号）</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-sm text-gray-600 mb-1 block">密码有效期</label>
+                                    <input type="number" value="90" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-adminPurple-300 focus:border-adminPurple-500">
+                                    <p class="text-xs text-gray-400 mt-1">单位：天（0表示永久有效）</p>
+                                </div>
+                                <div>
+                                    <label class="text-sm text-gray-600 mb-1 block">登录超时时间</label>
+                                    <input type="number" value="30" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-adminPurple-300 focus:border-adminPurple-500">
+                                    <p class="text-xs text-gray-400 mt-1">单位：分钟</p>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm text-gray-600">登录失败锁定</label>
+                                    <label class="switch-toggle">
+                                        <input type="checkbox" checked class="switch-input">
+                                        <span class="switch-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm text-gray-600">操作日志记录</label>
+                                    <label class="switch-toggle">
+                                        <input type="checkbox" checked class="switch-input">
+                                        <span class="switch-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 通知配置 -->
+                        <div class="bg-white rounded-lg shadow-sm border border-gray-100 p-5 admin-card-hover">
+                            <h4 class="font-medium text-gray-700 mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-bell text-adminPurple-600"></i> 通知配置
+                            </h4>
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm text-gray-600">账号创建通知</label>
+                                    <label class="switch-toggle">
+                                        <input type="checkbox" checked class="switch-input">
+                                        <span class="switch-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm text-gray-600">密码重置通知</label>
+                                    <label class="switch-toggle">
+                                        <input type="checkbox" checked class="switch-input">
+                                        <span class="switch-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <label class="text-sm text-gray-600">账号禁用通知</label>
+                                    <label class="switch-toggle">
+                                        <input type="checkbox" class="switch-input">
+                                        <span class="switch-slider"></span>
+                                    </label>
+                                </div>
+                                <div>
+                                    <label class="text-sm text-gray-600 mb-1 block">通知方式</label>
+                                    <div class="space-y-2">
+                                        <div class="flex items-center gap-2">
+                                            <input type="checkbox" checked id="notify-email" class="rounded text-adminPurple-600 focus:ring-adminPurple-500">
+                                            <label for="notify-email" class="text-sm text-gray-600">邮箱通知</label>
+                                        </div>
+                                        <div class="flex items-center gap-2">
+                                            <input type="checkbox" id="notify-sms" class="rounded text-adminPurple-600 focus:ring-adminPurple-500">
+                                            <label for="notify-sms" class="text-sm text-gray-600">短信通知（需配置短信接口）</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="text-sm text-gray-600 mb-1 block">通知模板（密码重置）</label>
+                                    <textarea rows="3" class="w-full px-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-adminPurple-300 focus:border-adminPurple-500 text-sm">尊敬的{姓名}，您的账号{账号ID}密码已重置，新密码为：{随机密码}，请尽快登录修改。</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 保存按钮 -->
+                    <div class="mt-6 flex justify-end">
+                        <button class="admin-btn admin-btn-outline mr-3">
+                            <i class="fa-solid fa-undo mr-1"></i> 恢复默认
+                        </button>
+                        <button class="admin-btn admin-btn-primary">
+                            <i class="fa-solid fa-save mr-1"></i> 保存配置
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 侧边栏菜单切换交互
+        document.querySelectorAll('.admin-menu-item').forEach(item => {
+            item.addEventListener('click', function() {
+                // 切换菜单激活态
+                document.querySelectorAll('.admin-menu-item').forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+                
+                // 切换内容面板
+                const target = this.getAttribute('data-target');
+                document.querySelectorAll('.content-panel').forEach(panel => {
+                    panel.classList.add('hidden');
+                });
+                document.getElementById(target).classList.remove('hidden');
+                
+                // 如果是数据统计面板，初始化图表
+                if (target === 'data-statistics') {
+                    initCharts();
+                }
+            });
+        });
+
+        // 初始化数据统计图表
+        function initCharts() {
+            // 账号增长趋势图
+            const growthChart = echarts.init(document.getElementById('growth-chart'));
+            growthChart.setOption({
+                tooltip: {
+                    trigger: 'axis',
+                    axisPointer: { type: 'shadow' }
+                },
+                grid: {
+                    left: '3%',
+                    right: '4%',
+                    bottom: '3%',
+                    containLabel: true
+                },
+                xAxis: {
+                    type: 'category',
+                    data: ['2024-01', '2024-02', '2024-03', '2024-04', '2024-05', '2024-06']
+                },
+                yAxis: {
+                    type: 'value'
+                },
+                series: [
+                    {
+                        name: '新增账号',
+                        type: 'bar',
+                        data: [18, 22, 19, 25, 21, 24],
+                        itemStyle: { color: '#9333ea' }
+                    },
+                    {
+                        name: '累计账号',
+                        type: 'line',
+                        data: [98, 120, 139, 164, 185, 209],
+                        itemStyle: { color: '#a855f7' },
+                        smooth: true
+                    }
+                ]
+            });
+
+            // 班级账号分布饼图
+            const classChart = echarts.init(document.getElementById('class-distribution-chart'));
+            classChart.setOption({
+                tooltip: { trigger: 'item' },
+                series: [
+                    {
+                        name: '班级分布',
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        data: [
+                            { value: 45, name: '初二(1)班 听障班' },
+                            { value: 62, name: '初三(2)班 融合班' },
+                            { value: 38, name: '初一(3)班 听障班' },
+                            { value: 49, name: '初四(1)班 融合班' }
+                        ],
+                        label: {
+                            fontSize: 10
+                        }
+                    }
+                ],
+                color: ['#a855f7', '#d8b4fe', '#c084fc', '#e9d5ff']
+            });
+
+            // 账号状态分布饼图
+            const statusChart = echarts.init(document.getElementById('status-distribution-chart'));
+            statusChart.setOption({
+                tooltip: { trigger: 'item' },
+                series: [
+                    {
+                        name: '状态分布',
+                        type: 'pie',
+                        radius: ['40%', '70%'],
+                        data: [
+                            { value: 122, name: '启用' },
+                            { value: 6, name: '禁用' },
+                            { value: 3, name: '异常' }
+                        ],
+                        label: {
+                            fontSize: 10
+                        }
+                    }
+                ],
+                color: ['#10b981', '#ef4444', '#f59e0b']
+            });
+
+            // 自适应窗口大小
+            window.addEventListener('resize', () => {
+                growthChart.resize();
+                classChart.resize();
+                statusChart.resize();
+            });
+        }
+    </script>
+</body>
+</html>

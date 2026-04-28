@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>融桥 - 学生端</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#2563EB',
+            secondary: '#FF7D00',
+            dark: '#1E293B',
+            light: '#F8FAFC',
+            subBtnBg: '#F1F5F9',
+            subBtnText: '#64748B'
+          },
+        }
+      }
+    }
+  </script>
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .card-hover { @apply transition-all duration-300 hover:-translate-y-1 hover:shadow-md; }
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body { height:100%; overflow:hidden; background:#f8fafc; }
+
+    /* 页面整体容器 */
+    .student-wrap {
+      height:100vh;
+      display:flex;
+      flex-direction:column;
+    }
+
+    /* 顶部标题栏 */
+   .page-header {
+  height:60px;
+  width:100%;
+  background:#FFA042; /* 保留原浅橙色 */
+  border-bottom:1px solid #FB923C;
+  padding:0 16px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-shrink:0;
+}
+/* 文字 */
+.page-header h3 { color: #f8fafc; } /* 暖白色 */
+.page-header p { color: #F1F5F9; }
+/* 图标（使用界面主蓝色，统一风格） */
+.page-header .fa-solid {
+  color: #2563EB; /* 主色蓝，高对比+协调 */
+  font-size: 1.1rem;
+  transition: color 0.2s;
+}
+.page-header .fa-solid:hover { color: #1D4ED8; }
+/* 退出按钮*/
+.page-header .fa-right-from-bracket { color: #F43F5E; }
+.page-header .fa-right-from-bracket:hover { color: #FB7185; }
+
+    /* 核心主视口区域 */
+    .main-content {
+      flex:1;
+      display:flex;
+      gap:12px;
+      padding:12px;
+      overflow:hidden;
+    }
+
+    /* 左侧主内容：PPT + 字幕 */
+    .left-col {
+      flex:1 1 78%;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    /* PPT课件区（60%占比） */
+    .ppt-box {
+      flex:0 0 80%;
+      background:#f3f4f6;
+      border-radius:12px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      color:#6b7280;
+    }
+    /* 实时字幕区（40%占比） */
+    .subtitle-box {
+      flex:0 0 20%;
+      background:#fff;
+      border-radius:12px;
+      border:1px solid #e5e7eb;
+      padding:16px;
+      overflow-y:auto;
+    }
+
+    /* 右侧栏：手语区+聊天框（移除讨论区） */
+    .right-col {
+      flex:0 0 22%;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      padding:0;
+    }
+    /* 手语播放区（调整为60%高度） */
+    .sign-section {
+      flex:0 0 60%;
+      background:#f3f4f6;
+      border-radius:12px;
+      display:flex;
+      flex-direction:column;
+      padding:8px;
+    }
+    .sign-main {
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      color:#6b7280;
+    }
+    /* 聊天框（调整为40%高度） */
+    .chat-section {
+      flex:0 0 40%;
+      background:#fff;
+      border-radius:12px;
+      border:1px solid #e5e7eb;
+      padding:8px;
+      display:flex;
+      flex-direction:column;
+    }
+    .chat-header {
+      font-size:0.85rem;
+      font-weight:600;
+      color:#1E293B;
+      padding:4px 0;
+      border-bottom:1px solid #f1f5f9;
+      margin-bottom:4px;
+    }
+    .chat-messages {
+      flex:1;
+      overflow-y:auto;
+      font-size:0.7rem;
+      line-height:1.3;
+      margin-bottom:6px;
+    }
+    /* 整合讨论区的角色色彩标记到聊天消息 */
+    .chat-message {
+      margin-bottom:4px;
+      padding:4px;
+      border-radius:6px;
+    }
+    .chat-message.teacher {
+      background:#fef3c7;
+      color:#d97706;
+    }
+    .chat-message.student {
+      background:#e8f0fe;
+      color:#2563EB;
+    }
+    .chat-message.me {
+      background:#f1f5f9;
+      color:#1E293B;
+    }
+    .chat-message .sender {
+      font-weight:600;
+    }
+    .chat-input-wrap {
+      display:flex;
+      gap:4px;
+    }
+    .chat-input {
+      flex:1;
+      padding:4px 6px;
+      border:1px solid #e5e7eb;
+      border-radius:6px;
+      font-size:0.7rem;
+      outline:none;
+    }
+    .chat-input:focus {
+      border-color:#2563EB;
+    }
+    .chat-send {
+      padding:4px 8px;
+      background:#2563EB;
+      color:white;
+      border-radius:6px;
+      border:none;
+      font-size:0.7rem;
+      cursor:pointer;
+    }
+
+    /* 底部按钮栏 - 保持原有样式 */
+    .action-bar {
+      height:100px;
+      width:100%;
+      background:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      padding:0 24px;
+      flex-shrink:0;
+    }
+    .main-btns {
+      display:flex;
+      gap:12px;
+      justify-content:center;
+      flex:1;
+    }
+    .sub-btns {
+      display:flex;
+      gap:8px;
+      justify-content:flex-end;
+      flex:0 0 22%;
+    }
+    .main-btn {
+      width:11%;
+      height:75px;
+      background:#e8f0fe;
+      color:#2563EB;
+      border-radius:14px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      border:none;
+      cursor:pointer;
+      transition:all 0.2s;
+      box-shadow:0 2px 4px rgba(37, 99, 235, 0.08);
+    }
+    .main-btn.active {
+      background:#2563EB;
+      color:white;
+      box-shadow:0 4px 8px rgba(37, 99, 235, 0.2);
+    }
+    .main-btn:hover {
+      transform:translateY(-3px);
+      box-shadow:0 6px 12px rgba(37, 99, 235, 0.12);
+    }
+    .main-btn i {
+      font-size:1.5rem;
+    }
+    .main-btn span {
+      font-size:0.8rem;
+      font-weight:500;
+    }
+    .sub-btn {
+      width:28%;
+      height:60px;
+      background:#F1F5F9;
+      color:#64748B;
+      border-radius:10px;
+      border:1px solid #E2E8F0;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:3px;
+      cursor:pointer;
+      transition:all 0.2s;
+    }
+    .sub-btn:hover {
+      transform:translateY(-2px);
+      background:#E2E8F0;
+      box-shadow:0 3px 6px rgba(100, 116, 139, 0.08);
+    }
+    .sub-btn i {
+      font-size:1rem;
+    }
+    .sub-btn span {
+      font-size:0.7rem;
+      font-weight:400;
+    }
+  </style>
+</head>
+
+<body>
+<div class="student-wrap">
+  <!-- 顶部标题栏 -->
+  <header class="page-header">
+    <div>
+      <h3 class="font-bold text-dark">融桥 - 学生端</h3>
+      <p class="text-xs text-gray-500">初二(1)班 | 数学课堂</p>
+    </div>
+    <div class="flex gap-5 text-gray-600">
+      <i class="fa-solid fa-clock-rotate-left cursor-pointer"></i>
+      <i class="fa-solid fa-gear cursor-pointer"></i>
+      <i class="fa-solid fa-right-from-bracket cursor-pointer text-red-500"></i>
+    </div>
+  </header>
+
+  <!-- 中间主内容区域 -->
+  <div class="main-content">
+    <!-- 左侧：PPT + 字幕 -->
+    <div class="left-col">
+      <!-- PPT课件展示区 -->
+      <div class="ppt-box">
+        <i class="fa-solid fa-file-powerpoint text-4xl text-primary/50 mb-2"></i>
+        <p class="font-medium">教师PPT/教学课件展示区</p>
+        <p class="text-sm mt-1">支持图片/文档/视频课件播放</p>
+      </div>
+
+      <!-- 实时字幕区 -->
+      <div class="subtitle-box">
+        <div class="flex justify-between items-center mb-3">
+          <span class="font-medium">实时字幕</span>
+          <div class="flex gap-3">
+            <button class="text-sm p-1 hover:bg-gray-100 rounded"><i class="fa-solid fa-font"></i></button>
+            <button class="text-sm p-1 hover:bg-gray-100 rounded"><i class="fa-solid fa-circle-half-stroke"></i></button>
+          </div>
+        </div>
+        <p class="mb-2">同学们，今天我们来学习三角形的性质。</p>
+        <p class="mb-2">大家回忆一下我们之前学过的知识</p>
+      </div>
+    </div>
+
+    <!-- 右侧：手语区 + 聊天框（移除讨论区） -->
+    <div class="right-col">
+      <!-- 手语播放区（调整高度占比） -->
+      <div class="sign-section">
+        <h4 class="text-center font-medium mb-1">手语翻译</h4>
+        <div class="sign-main">
+          <i class="fa-solid fa-hands text-2xl text-primary/50 mb-1"></i>
+          <p class="text-sm">手语实时播放</p>
+        </div>
+        <select class="w-full p-1 mt-1 border border-gray-200 rounded text-xs">
+          <option>1.0x</option>
+          <option>0.8x</option>
+          <option>1.2x</option>
+        </select>
+      </div>
+
+      <!-- 聊天框（调整高度占比，整合角色色彩） -->
+      <div class="chat-section">
+        <div class="chat-header">
+          实时聊天
+        </div>
+ 
+        <div class="chat-messages">
+          <div class="chat-message teacher"><span class="sender">王老师</span>：大家有疑问随时说</div>
+          <div class="chat-message student"><span class="sender">李明</span>：好的老师！</div>
+          <div class="chat-message student"><span class="sender">张小红</span>：我还没太懂，等下想再问问</div>
+          <div class="chat-message teacher"><span class="sender">王老师</span>：没问题，课后也可以私聊我</div>
+        </div>
+
+        <div class="chat-input-wrap">
+          <input type="text" class="chat-input" placeholder="输入消息...">
+          <button class="chat-send"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- 底部操作按钮区 -->
+  <div class="action-bar">
+    <!-- 主按钮组 -->
+    <div class="main-btns">
+      <button class="main-btn">
+        <i class="fa-solid fa-question"></i>
+        <span>提问</span>
+      </button>
+      <button class="main-btn">
+        <i class="fa-solid fa-hand"></i>
+        <span>求助</span>
+      </button>
+      <button class="main-btn active">
+        <i class="fa-solid fa-check"></i>
+        <span>听懂</span>
+      </button>
+      <button class="main-btn">
+        <i class="fa-solid fa-xmark"></i>
+        <span>没听懂</span>
+      </button>
+    </div>
+    
+    <!-- 副按钮组 -->
+    <div class="sub-btns">
+      <button class="sub-btn">
+        <i class="fa-solid fa-flag"></i>
+        <span>标记</span>
+      </button>
+      <button class="sub-btn">
+        <i class="fa-solid fa-star"></i>
+        <span>收藏</span>
+      </button>
+      <button class="sub-btn">
+        <i class="fa-solid fa-comment"></i>
+        <span>反馈</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // 按钮激活切换（仅主按钮生效）
+  document.querySelectorAll('.main-btn').forEach(btn => {
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.main-btn').forEach(b => b.classList.remove('active'));
+      this.classList.add('active');
+    })
+  })
+
+  // 聊天框发送按钮简单交互（模拟）
+  const chatSend = document.querySelector('.chat-send');
+  const chatInput = document.querySelector('.chat-input');
+  const chatMessages = document.querySelector('.chat-messages');
+  
+  chatSend.addEventListener('click', function() {
+    if (!chatInput.value.trim()) return;
+    const newMsg = document.createElement('div');
+    newMsg.className = 'chat-message me'; // 新增"我"的消息样式
+    newMsg.innerHTML = `<span class="sender">我</span>：${chatInput.value.trim()}`;
+    chatMessages.appendChild(newMsg);
+    chatInput.value = '';
+    chatMessages.scrollTop = chatMessages.scrollHeight; // 滚动到底部
+  });
+
+  // 输入框回车发送
+  chatInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+      chatSend.click();
+    }
+  });
+</script>
+</body>
+</html>
