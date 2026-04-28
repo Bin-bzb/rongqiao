@@ -58,7 +58,20 @@
         hover:bg-primary hover:text-white transition-all duration-300 cursor-pointer card-hover;
       }
       .action-btn.active { @apply bg-primary text-white; }
+      /* 管理员端导航按钮 */
+ .admin-card { @apply border-gray-200; }
+  .admin-btn { @apply bg-purple-600 hover:bg-purple-700 text-white; }
+  .admin-header { @apply bg-purple-600 text-white; }
+  .admin-border { @apply border-purple-400; }
+  .admin-text { @apply text-purple-700; }
+  /* 管理员内容区切换 */
+  .admin-content { @apply h-full; }
+  
+  /* 操作按钮统一样式 */
+  .edit-account, .reset-pwd, .delete-account {
+    @apply w-8 h-8 grid place-items-center rounded-lg hover:bg-gray-100 transition-colors;
     }
+  }
   </style>
 </head>
 <body class="bg-light font-sans text-dark">
@@ -131,7 +144,7 @@
       </p>
       <div class="max-w-4xl mx-auto text-gray-600 text-center leading-relaxed">
         <p class="mb-4">
-          融桥是国内领先的教育场景专属AI手语翻译平台，深耕听障教育领域，针对听障学生的学习特点与教育场景的核心需求，
+          融桥是一个教育场景专属AI手语翻译平台，专注听障教育领域，针对听障学生的学习特点与教育场景的核心需求，
           融合先进的计算机视觉、自然语言处理、情感识别技术，打造了覆盖课堂教学、课后学习、家校沟通全场景的无障碍教育解决方案。
         </p>
         <p>
@@ -150,9 +163,10 @@
       </h2>
       <p class="section-subtitle">根据您的身份选择对应入口，进入专属教学/学习界面</p>
       
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-8 max-w-5xl mx-auto">
         <!-- 教师端入口卡片 -->
-        <div data-modal="teacher-modal" class="bg-white rounded-xl p-8 shadow-lg card-hover cursor-pointer">
+        <a href="teacher.html" target="_blank" class="bg-white rounded-xl p-8 shadow-lg card-hover block">
           <div class="w-20 h-20 rounded-full bg-primary/10 grid place-items-center text-primary mb-6 mx-auto">
             <i class="fa-solid fa-chalkboard-teacher text-4xl"></i>
           </div>
@@ -165,26 +179,48 @@
               进入教师端
             </button>
           </div>
-        </div>
+        </a>
 
-        <!-- 学生端入口卡片 -->
-        <div data-modal="student-modal" class="bg-white rounded-xl p-8 shadow-lg card-hover cursor-pointer">
-          <div class="w-20 h-20 rounded-full bg-secondary/10 grid place-items-center text-secondary mb-6 mx-auto">
-            <i class="fa-solid fa-user-graduate text-4xl"></i>
-          </div>
-          <h3 class="text-2xl font-bold text-center mb-4">学生端</h3>
-          <p class="text-gray-600 text-center leading-relaxed mb-6">
-            上下分栏布局，上方实时显示字幕与手语小窗，下方快速表达课堂意图，无障碍获取教学内容
-          </p>
-          <div class="text-center">
-            <button class="bg-secondary text-white px-6 py-3 rounded-lg hover:bg-secondary/90 transition-colors">
-              进入学生端
-            </button>
-          </div>
-        </div>
-      </div>
+       <!--学生端入口卡片 -->
+<a href="student.html" target="_blank" class="bg-white rounded-xl p-8 shadow-lg card-hover block">
+  <div class="w-20 h-20 rounded-full bg-secondary/10 grid place-items-center text-secondary mb-6 mx-auto">
+    <i class="fa-solid fa-user-graduate text-4xl"></i>
+  </div>
+  <h3 class="text-2xl font-bold text-center mb-4">学生端</h3>
+  <p class="text-gray-600 text-center leading-relaxed mb-6">
+    上下分栏布局，上方实时显示字幕与手语小窗，下方快速表达课堂意图，无障碍获取教学内容
+  </p>
+  <div class="text-center">
+    <button class="bg-secondary text-white px-6 py-3 rounded-lg hover:bg-secondary/90 transition-colors">
+      进入学生端
+    </button>
+  </div>
+</a>
+
+       <!-- 管理员端入口卡片 -->
+<a href="admin.html" target="_blank" class="admin-card bg-white rounded-xl p-8 shadow-lg card-hover block">
+  <div class="w-20 h-20 rounded-full bg-primary/10 grid place-items-center admin-text mb-6 mx-auto">
+    <i class="fa-solid fa-user-shield text-4xl"></i>
+  </div>
+  <h3 class="text-2xl font-bold text-center mb-4 text-dark">管理员端</h3>
+  <p class="text-gray-600 text-center leading-relaxed mb-6">
+    账号管理、系统配置、数据监控，全方位管理平台运行
+  </p>
+  <div class="text-center">
+    <button class="admin-btn px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors">
+      进入管理员端
+    </button>
+  </div>
+</a>
+
+  
+    </div>
+    </div>
     </div>
   </section>
+
+
+
 
   <!-- 核心功能区域 -->
   <section id="function" class="py-16 bg-gray-50">
@@ -435,155 +471,9 @@
     </div>
   </footer>
 
-  <!-- 1. 教师端模态框 -->
-  <div id="teacher-modal" class="modal-backdrop">
-    <div class="modal-content">
-      <div class="bg-primary text-white px-6 py-4 flex justify-between items-center">
-        <h2 class="text-xl font-bold">教师端 - 课堂教学系统</h2>
-        <button class="modal-close text-white hover:text-white/80">
-          <i class="fa-solid fa-xmark text-xl"></i>
-        </button>
-      </div>
-      <div class="teacher-layout">
-        <div class="teacher-main">
-          <div id="teacher-preclass" class="h-full flex flex-col items-center justify-center">
-            <h3 class="text-2xl font-bold mb-6">课前准备</h3>
-            <div class="w-full max-w-md space-y-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">选择授课班级</label>
-                <select id="class-select" class="w-full p-3 border border-gray-300 rounded-lg">
-                  <option value="">请选择班级</option>
-                  <option value="class1">初二(1)班 听障班</option>
-                  <option value="class2">初三(2)班 融合班</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">选择课程章节</label>
-                <select id="chapter-select" class="w-full p-3 border border-gray-300 rounded-lg">
-                  <option value="">请选择章节</option>
-                  <option value="chapter1">数学-几何图形-三角形</option>
-                  <option value="chapter2">语文-记叙文-阅读理解</option>
-                </select>
-              </div>
-              <button id="load-teaching-material" class="w-full bg-primary text-white py-3 rounded-lg hover:bg-primary/90 transition-colors">
-                加载教学材料
-              </button>
-            </div>
-          </div>
 
-          <div id="teacher-class" class="h-full hidden">
-              <div class="bg-white rounded-lg p-4 shadow-sm h-full flex flex-col">
-                  <div class="flex justify-between items-center mb-4">
-                      <h3 class="text-lg font-semibold">授课PPT/教学材料</h3>
-                      <!-- 添加翻页控制按钮 -->
-                      <div class="flex items-center space-x-2">
-                          <button id="prev-page" class="px-3 py-1 text-sm bg-gray-200 rounded disabled:opacity-50" disabled>上一页</button>
-                          <span id="page-info">第 1 页</span>
-                          <button id="next-page" class="px-3 py-1 text-sm bg-gray-200 rounded disabled:opacity-50" disabled>下一页</button>
-                      </div>
-                  </div>
-                  <!-- 动态 PPT 容器 -->
-                  <div id="ppt-container" class="bg-gray-100 rounded-lg flex-1 overflow-auto flex items-center justify-center">
-                      <p class="text-gray-500">请先加载教学材料</p>
-                  </div>
-              </div>
-          </div>
-          
-          <div id="teacher-postclass" class="h-full hidden">
-            <h3 class="text-xl font-bold mb-4">课后学情简报</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 h-[calc(100%-40px)]">
-              <div class="bg-white p-4 rounded-lg shadow-sm">
-                <h4 class="font-semibold mb-2">课堂参与热力图</h4>
-                <canvas id="teacher-heatmap-chart" height="200"></canvas>
-              </div>
-              <div class="bg-white p-4 rounded-lg shadow-sm">
-                <h4 class="font-semibold mb-2">知识点互动情况</h4>
-                <canvas id="teacher-knowledge-chart" height="200"></canvas>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        <div class="teacher-sidebar">
-          <div class="border-b border-gray-200 p-4">
-            <h4 class="font-semibold mb-2">实时语音转写字幕</h4>
-            <div id="teacher-subtitle" class="bg-gray-50 p-3 rounded-lg h-24 overflow-y-auto text-gray-700">
-              未开始授课，暂无字幕
-            </div>
-          </div>
-          <div class="border-b border-gray-200 p-4 flex-1 overflow-auto">
-            <h4 class="font-semibold mb-2">班级学生状态</h4>
-            <div id="teacher-student-list" class="space-y-2">
-              <p class="text-gray-500">请先选择班级加载学生名单</p>
-            </div>
-          </div>
-          <div class="p-4">
-            <h4 class="font-semibold mb-2">适配资源推送</h4>
-            <div id="teacher-resource-list" class="space-y-2 mb-3">
-              <p class="text-gray-500">加载章节后显示适配资源</p>
-            </div>
-            <button id="push-resource-btn" class="w-full bg-secondary text-white py-2 rounded-lg hover:bg-secondary/90 transition-colors hidden">
-              一键推送至学生端
-            </button>
-          </div>
-          <div class="p-4 border-t border-gray-200">
-            <button id="start-class-btn" class="w-full bg-primary text-white py-3 rounded-lg hover:bg-primary/90 transition-colors mb-2 hidden">
-              开始授课
-            </button>
-            <button id="end-class-btn" class="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition-colors hidden">
-              结束授课
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- 2. 学生端模态框 -->
-  <div id="student-modal" class="modal-backdrop">
-    <div class="modal-content">
-      <div class="bg-secondary text-white px-6 py-4 flex justify-between items-center">
-        <h2 class="text-xl font-bold">学生端 - 课堂学习系统</h2>
-        <button class="modal-close text-white hover:text-white/80">
-          <i class="fa-solid fa-xmark text-xl"></i>
-        </button>
-      </div>
-      <div class="student-layout">
-        <div class="student-info">
-          <div class="student-subtitle">
-            <h3 class="text-lg font-semibold mb-3">实时课堂字幕</h3>
-            <div id="student-subtitle" class="bg-white p-4 rounded-lg shadow-sm h-[calc(100%-40px)] overflow-y-auto text-gray-700 leading-relaxed">
-              教师未开始授课，暂无字幕
-            </div>
-          </div>
-          <div class="student-sign-window">
-            <h4 class="font-semibold mb-2">手语解释</h4>
-            <div id="student-sign-video" class="w-full h-[calc(100%-40px)] bg-gray-100 rounded-lg flex items-center justify-center">
-              <p class="text-gray-500 text-center text-sm">暂无手语视频</p>
-            </div>
-          </div>
-        </div>
-        <div class="student-action">
-          <div class="action-btn" data-action="question">
-            <i class="fa-solid fa-question-circle text-4xl mb-2"></i>
-            <span class="font-bold">提问</span>
-          </div>
-          <div class="action-btn" data-action="help">
-            <i class="fa-solid fa-hand-paper text-4xl mb-2"></i>
-            <span class="font-bold">求助</span>
-          </div>
-          <div class="action-btn" data-action="understand">
-            <i class="fa-solid fa-check-circle text-4xl mb-2"></i>
-            <span class="font-bold">听懂</span>
-          </div>
-          <div class="action-btn" data-action="not-understand">
-            <i class="fa-solid fa-times-circle text-4xl mb-2"></i>
-            <span class="font-bold">没听懂</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  
 
   <!-- 3. 实时语音转文字（手语）模态框 -->
   <div id="voice-to-sign-modal" class="modal-backdrop">
@@ -632,6 +522,51 @@
       </div>
     </div>
   </div>
+
+<!-- 3.1 删除账号确认模态框 -->
+<div id="delete-confirm-modal" class="modal-backdrop">
+  <div class="modal-content max-w-md">
+    <div class="p-6">
+      <div class="text-center mb-4">
+        <i class="fa-solid fa-exclamation-triangle text-4xl text-yellow-500 mb-2"></i>
+        <h3 class="text-xl font-bold text-gray-800">确认删除</h3>
+      </div>
+      <p class="text-gray-600 mb-6 text-center">是否确认删除账号 <span id="delete-account-id" class="font-semibold">S2024001</span>？此操作不可恢复！</p>
+      <div class="flex gap-3 justify-center">
+        <button id="cancel-delete-btn" class="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+          取消
+        </button>
+        <button id="confirm-delete-btn" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors">
+          确认删除
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 3.2 重置密码确认模态框 -->
+<div id="reset-pwd-modal" class="modal-backdrop">
+  <div class="modal-content max-w-md">
+    <div class="p-6">
+      <h3 class="text-xl font-bold text-gray-800 mb-4">重置密码</h3>
+      <p class="text-gray-600 mb-4">是否确认重置账号 <span id="reset-account-id" class="font-semibold">S2024001</span> 的密码？</p>
+      <div class="bg-gray-50 p-3 rounded-lg mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">新密码</label>
+        <input type="password" id="new-pwd" class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50" placeholder="设置新密码" required>
+      </div>
+      <div class="flex gap-3">
+        <button id="cancel-reset-btn" class="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition-colors">
+          取消
+        </button>
+        <button id="confirm-reset-btn" class="bg-secondary text-white px-4 py-2 rounded-lg hover:bg-secondary/90 transition-colors">
+          确认重置
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
 
   <!-- 其他功能模态框（简化占位） -->
   <div id="sign-to-voice-modal" class="modal-backdrop">
@@ -1076,6 +1011,39 @@
         }
       });
     }
+    // 模态框统一控制逻辑
+document.addEventListener('DOMContentLoaded', function() {
+  // 打开模态框
+  document.querySelectorAll('[data-modal]').forEach(trigger => {
+    trigger.addEventListener('click', function() {
+      const modalId = this.getAttribute('data-modal');
+      const modal = document.getElementById(modalId);
+      if (modal) modal.classList.add('active');
+      // 禁止页面滚动
+      document.body.style.overflow = 'hidden';
+    });
+  });
+
+  // 关闭模态框
+  document.querySelectorAll('.modal-close').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const modal = this.closest('.modal-backdrop');
+      if (modal) modal.classList.remove('active');
+      // 恢复页面滚动
+      document.body.style.overflow = 'auto';
+    });
+  });
+
+  // 点击模态框背景关闭
+  document.querySelectorAll('.modal-backdrop').forEach(modal => {
+    modal.addEventListener('click', function(e) {
+      if (e.target === this) {
+        this.classList.remove('active');
+        document.body.style.overflow = 'auto';
+      }
+    });
+  });
+});
   </script>
 </body>
 </html>
